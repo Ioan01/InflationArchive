@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InflationArchiveApi", "InflationArchiveApi\InflationArchiveApi.csproj", "{0116A5B5-2D90-4EEC-8E13-4ACAE8F9EDCC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InflationArchiveFrontend", "InflationArchiveFrontend\InflationArchiveFrontend.csproj", "{F9CA24D6-E194-45B3-BF86-6D51B8EF4E49}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InflationArchiveFrontend", "InflationArchiveFrontend\InflationArchiveFrontend.csproj", "{6FEB902F-42D9-408D-AD6B-F03116EC0C11}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,9 +14,9 @@ Global
 		{0116A5B5-2D90-4EEC-8E13-4ACAE8F9EDCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0116A5B5-2D90-4EEC-8E13-4ACAE8F9EDCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0116A5B5-2D90-4EEC-8E13-4ACAE8F9EDCC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F9CA24D6-E194-45B3-BF86-6D51B8EF4E49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F9CA24D6-E194-45B3-BF86-6D51B8EF4E49}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F9CA24D6-E194-45B3-BF86-6D51B8EF4E49}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F9CA24D6-E194-45B3-BF86-6D51B8EF4E49}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6FEB902F-42D9-408D-AD6B-F03116EC0C11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FEB902F-42D9-408D-AD6B-F03116EC0C11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6FEB902F-42D9-408D-AD6B-F03116EC0C11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6FEB902F-42D9-408D-AD6B-F03116EC0C11}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
