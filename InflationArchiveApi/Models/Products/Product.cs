@@ -1,4 +1,4 @@
-namespace groceriesScraper_RO.Models.Products;
+namespace InflationArchive.Models.Products;
 
 public class Product
 {

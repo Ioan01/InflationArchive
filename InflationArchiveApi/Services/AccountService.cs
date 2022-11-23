@@ -42,7 +42,9 @@ public class AccountService
     public bool ValidateCredentials(User user, string password)
     {
         if (passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password) == PasswordVerificationResult.Failed)
+        {
             return false;
+        }
         return true;
     }
 

@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace groceriesScraper_RO.Models.Products;
+namespace InflationArchive.Models.Products;
 
 [Table("user")]
 [Index(nameof(Name),IsUnique=true)]

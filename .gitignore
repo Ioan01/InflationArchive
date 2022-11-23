@@ -15,3 +15,7 @@
 **.dll
 **.gz
 **/Debug
+
+InflationArchiveApi/appsettings.json
+
+InflationArchiveApi/obj/

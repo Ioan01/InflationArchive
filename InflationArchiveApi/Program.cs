@@ -1,7 +1,10 @@
+using System.Text;
 using InflationArchive.Contexts;
 using InflationArchive.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,13 +26,33 @@ builder.Services.AddScoped<AccountService>();
 
 
 
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        options.ExpireTimeSpan = TimeSpan.FromHours(1);
-        options.Cookie.SameSite = SameSiteMode.Strict;
-        options.LoginPath = "/account/login";
+        options.SaveToken = true;
+
+        options.TokenValidationParameters = new TokenValidationParameters()
+        {
+            ValidIssuer = builder.Configuration["JWT:Issuer"],
+            ValidAudience = builder.Configuration["JWT:Audience"],
+            RequireExpirationTime = true,
+            ValidateLifetime = true,
+            IssuerSigningKey =
+                new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(builder.Configuration["JWT:IssuerSigningKey"])),
+            ClockSkew = TimeSpan.Zero
+        };
     });
+
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "default",
+        policy  =>
+        {
+            policy.WithOrigins(new []{"http://localhost:8080","http://localhost:5016"});
+        });
+});
 
 var app = builder.Build();
 
@@ -39,13 +62,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors("default");
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 
 app.UseAuthorization();
-app.UseAuthentication();
+
 
 
 app.MapControllers();
+
 
 app.Run();
