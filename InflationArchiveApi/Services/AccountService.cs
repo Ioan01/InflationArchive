@@ -1,8 +1,5 @@
-using System.Security.Claims;
 using InflationArchive.Contexts;
 using InflationArchive.Models.Account;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -46,15 +43,5 @@ public class AccountService
             return false;
         }
         return true;
-    }
-
-    public async Task SignInAsync(HttpContext httpContext, User user)
-    {
-        var identity = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
-        identity.AddClaim(new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()));
-        identity.AddClaim(new Claim(ClaimTypes.Name,user.UserName));
-
-        await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(identity));
     }
 }
