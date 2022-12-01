@@ -1,10 +1,10 @@
 using System.Text;
 using InflationArchive.Contexts;
 using InflationArchive.Services;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,14 +15,23 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var connectionString = builder.Configuration.GetValue<string>("ConnectionStrings:groceriesScraper-ROContext");
+
+
+var connectionStringUsers = builder.Configuration.GetValue<string>("ConnectionStrings:userContext");
 builder.Services.AddDbContext<UserContext>(options=>
 {
-    options.UseNpgsql(connectionString);
+    options.UseNpgsql(connectionStringUsers);
+},ServiceLifetime.Singleton);
+
+
+var connectionStringScraper = builder.Configuration.GetValue<string>("ConnectionStrings:scraperContext");
+builder.Services.AddDbContext<ScraperContext>(options =>
+{
+    options.UseNpgsql(connectionStringScraper);
 });
 
-builder.Services.AddScoped<AccountService>();
-
+builder.Services.AddSingleton<AccountService>();
+builder.Services.AddSingleton<HttpClient>();
 
 
 
@@ -52,6 +61,29 @@ builder.Services.AddCors(options =>
         {
             policy.WithOrigins(new []{"http://localhost:8080","http://localhost:5016"});
         });
+});
+
+
+builder.Services.AddQuartz(configurator =>
+{
+    configurator.UseMicrosoftDependencyInjectionJobFactory();
+    configurator.AddJob<MetroScraper>(jobConfigurator => jobConfigurator.WithIdentity("metro"));
+    configurator.AddTrigger(triggerConfigurator =>
+    {
+        triggerConfigurator.ForJob("metro")
+            .WithIdentity("metroTrigger")
+            .WithSimpleSchedule(scheduleBuilder =>
+            {
+                scheduleBuilder.WithIntervalInSeconds(5)
+                    .RepeatForever();
+            });
+    });
+});
+
+builder.Services.AddQuartzServer(options =>
+{
+    options.WaitForJobsToComplete = true;
+    options.AwaitApplicationStarted = true;
 });
 
 var app = builder.Build();
