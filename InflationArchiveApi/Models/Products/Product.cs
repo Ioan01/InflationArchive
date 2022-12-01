@@ -1,13 +1,15 @@
 namespace InflationArchive.Models.Products;
 
-public class Product
+public class Product : ScraperEntity
 {
-    public int Id { get; set; }
+    public Category Category { get; set; }
     
     public Manufacturer Manufacturer { get; set; }
-    public string Name { get; set; }
     
+    public Store Store { get; set; }
     
+    public double PricePerUnit { get; set; }
     
+    public QuantityAndUnit QuantityAndUnit { get; set; }
 
 }

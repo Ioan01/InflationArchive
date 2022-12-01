@@ -1,0 +1,9 @@
+Fructe/Legume,
+Carne,
+Lactate/Oua,
+Mezeluri,
+Produse Congelate/ Conserve,
+Painea/Cafea/Mic Dejun
+Condimente,
+Apa,
+Sucuri,

@@ -28,9 +28,10 @@ var connectionStringScraper = builder.Configuration.GetValue<string>("Connection
 builder.Services.AddDbContext<ScraperContext>(options =>
 {
     options.UseNpgsql(connectionStringScraper);
-});
+},ServiceLifetime.Singleton);
 
 builder.Services.AddSingleton<AccountService>();
+builder.Services.AddSingleton<ProductService>();
 builder.Services.AddSingleton<HttpClient>();
 
 

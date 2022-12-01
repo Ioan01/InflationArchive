@@ -1,24 +1,25 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.RegularExpressions;
 
 namespace InflationArchive.Models.Products;
 
-
+[NotMapped]
 public class QuantityAndUnit {
-    private static  Regex quantityRegex = new Regex
+    private static readonly Regex quantityRegex = new Regex
         ("[0-9]+[.,]?[0-9]*",RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    private static Regex quantityAndUnitRegex = new Regex
+    private static readonly Regex quantityAndUnitRegex = new Regex
         ("([0-9]+[.,]?[0-9]* *)(([mk]?[gl])|bucati)",RegexOptions.Multiline|RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 
 
-    private double quantity;
-    private string unit;
+    public double Quantity { get; set; }
+    public string Unit { get; set; }
 
 
     public QuantityAndUnit(double quantity, string unit)
     {
-        this.quantity = quantity;
-        this.unit = unit;
+        this.Quantity = quantity;
+        this.Unit = unit;
     }
 
     public static QuantityAndUnit getPriceAndUnit(String productName)

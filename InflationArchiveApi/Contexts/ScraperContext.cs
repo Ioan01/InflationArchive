@@ -9,8 +9,9 @@ public class ScraperContext : DbContext
     public DbSet<Store> Stores { get; set; }
     public DbSet<Manufacturer> Manufacturers { get; set; }
     public DbSet<ProductPrice> ProductPrices { get; set; }
+    public DbSet<Category> Categories { get; set; }
 
-    public ScraperContext(DbContextOptions<UserContext> options) : base(options)
+    public ScraperContext(DbContextOptions<ScraperContext> options) : base(options)
     {
         this.Database.EnsureCreated();
     }
