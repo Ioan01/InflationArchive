@@ -5,19 +5,18 @@ namespace InflationArchive.Services;
 
 public abstract class AbstractStoreScraper : IJob
 {
-    private HttpClient httpClient;
-    private List<KeyValuePair<string, string[]>> httpRequestsByCategory;
+    private static readonly Dictionary<string, Category> categoryReferences = new();
 
-    private static Dictionary<string,Category> categoryReferences = new ();
+    protected static Dictionary<string, Manufacturer> manufacturerReferences = new();
 
-    private static int PRODUCT_CAPACITY = 200;
+    private static readonly int PRODUCT_CAPACITY = 200;
+    protected HttpClient httpClient;
+    private readonly List<KeyValuePair<string, string[]>> httpRequestsByCategory;
 
-    private ProductService productService;
+    private readonly ProductService productService;
 
-    private Store? storeReference;
-   
 
-    protected abstract string StoreName { get; }
+    protected Store? storeReference;
 
     protected AbstractStoreScraper(HttpClient httpClient, ProductService productService)
     {
@@ -27,11 +26,25 @@ public abstract class AbstractStoreScraper : IJob
         httpRequestsByCategory = generateRequests();
     }
 
-    protected abstract List<KeyValuePair<string,string[]>> generateRequests();
 
-    protected abstract Task<IEnumerable<Product>> interpretResponse(HttpResponseMessage responseMessage, Category category);
-    
-    
+    protected abstract string StoreName { get; }
+
+    public async Task Execute(IJobExecutionContext context)
+    {
+        await fetchData();
+    }
+
+    protected abstract List<KeyValuePair<string, string[]>> generateRequests();
+
+    protected abstract Task<IEnumerable<Product>> interpretResponse(HttpResponseMessage responseMessage,
+        Category category);
+
+    protected async Task<Manufacturer> CreateOrGetManufacturer(string manufacturerName,
+        string? manufacturerImage = null)
+    {
+        return await productService.GetEntityOrCreate(productService.scraperContext.Manufacturers, manufacturerName);
+    }
+
     private async Task fetchData()
     {
         // if this is the first run when the app starts, load the store reference from the database, otherwise create it
@@ -44,37 +57,29 @@ public abstract class AbstractStoreScraper : IJob
             // if this is the first run, the categoryRefrence dictionary will be empty, so we will populate it 
             // after the first run of fetch, the dictionary will contain all key/value pairs 
             if (!categoryReferences.ContainsKey(category))
-            {
                 categoryReferences.Add(category,
-                    await productService.GetEntityOrCreate<Category>(productService.scraperContext.Categories,category));
-            }
+                    await productService.GetEntityOrCreate(productService.scraperContext.Categories, category));
 
             // cave our category ref
             var categoryRef = categoryReferences[category];
-            
-            
+
+
             var categoryProducts = new List<Product>(PRODUCT_CAPACITY);
-            
+
             // for each http request in the category
             foreach (var httpRequestMessage in requestMessages)
             {
                 var response = await httpClient.GetAsync(httpRequestMessage);
-                
+
                 // interpret the products in the reuqest
                 var responseProducts = await interpretResponse(response, categoryRef);
-                
+
                 // add the products from the request to a larger category list to bulk-update
                 categoryProducts.AddRange(responseProducts);
             }
-            
+
             // save or update every product
             await productService.SaveOrUpdateProducts(categoryProducts);
         }
-    }
-
-    public async Task Execute(IJobExecutionContext context)
-    {
-
-        await fetchData();
     }
 }

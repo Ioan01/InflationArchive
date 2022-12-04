@@ -6,10 +6,13 @@ public class Product : ScraperEntity
     
     public Manufacturer Manufacturer { get; set; }
     
-    public Store Store { get; set; }
+    public Store? Store { get; set; }
     
     public double PricePerUnit { get; set; }
     
-    public QuantityAndUnit QuantityAndUnit { get; set; }
+    public string Unit { get; set; }
+
+    public string? ImageUri { get; set; }
+    
 
 }

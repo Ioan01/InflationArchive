@@ -3,7 +3,9 @@ Carne,
 Lactate/Oua,
 Mezeluri,
 Produse Congelate/ Conserve,
-Painea/Cafea/Mic Dejun
+Paine / Patisrie
+Cafea/Mic Dejun
 Condimente,
 Apa,
 Sucuri,
+Alcool

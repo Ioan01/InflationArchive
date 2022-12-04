@@ -26,13 +26,9 @@ public class QuantityAndUnit {
     {
         var match = quantityAndUnitRegex.Match(productName);
 
-        if (match.Groups.Count == 0)
+        if (!match.Success)
             return new QuantityAndUnit(1,"piece");
-        if (match.Groups.Count > 1)
-        {
-        }
         
-
         double quantity = Double.Parse(match.Groups[1].Value.Replace(',','.'));
 
         string unit = match.Groups[2].Value.ToLower();

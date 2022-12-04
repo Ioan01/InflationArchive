@@ -31,6 +31,7 @@ builder.Services.AddDbContext<ScraperContext>(options =>
 },ServiceLifetime.Singleton);
 
 builder.Services.AddSingleton<AccountService>();
+builder.Services.AddSingleton<ImageService>();
 builder.Services.AddSingleton<ProductService>();
 builder.Services.AddSingleton<HttpClient>();
 
@@ -75,7 +76,7 @@ builder.Services.AddQuartz(configurator =>
             .WithIdentity("metroTrigger")
             .WithSimpleSchedule(scheduleBuilder =>
             {
-                scheduleBuilder.WithIntervalInSeconds(5)
+                scheduleBuilder.WithIntervalInHours(24)
                     .RepeatForever();
             });
     });
