@@ -10,6 +10,9 @@ public class QuantityAndUnit {
     private static readonly Regex quantityAndUnitRegex = new Regex
         ("([0-9]+[.,]?[0-9]* *)(([mk]?[gl])|bucati)",RegexOptions.Multiline|RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+    private static readonly Regex multiplicationRegex = new Regex(
+        "([0-9]+[.,]?[0-9]?) *[gl]?x *(([0-9]+[.,]?[0-9]* *))",
+        RegexOptions.Multiline | RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 
     public double Quantity { get; set; }
@@ -22,8 +25,19 @@ public class QuantityAndUnit {
         this.Unit = unit;
     }
 
-    public static QuantityAndUnit getPriceAndUnit(String productName)
+    public static QuantityAndUnit getPriceAndUnit(ref String productName)
     {
+        // for example 6x200g
+        var multiplicationMatch = multiplicationRegex.Match(productName);
+
+        if (multiplicationMatch.Success)
+        {
+            productName = productName.Replace(multiplicationMatch.Value,(Double.Parse(multiplicationMatch.Groups[1].Value)
+                *Double.Parse(multiplicationMatch.Groups[2].Value)).ToString());
+            
+        }
+        
+        
         var match = quantityAndUnitRegex.Match(productName);
 
         if (!match.Success)

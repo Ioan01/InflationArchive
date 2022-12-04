@@ -42,7 +42,11 @@ public abstract class AbstractStoreScraper : IJob
     protected async Task<Manufacturer> CreateOrGetManufacturer(string manufacturerName,
         string? manufacturerImage = null)
     {
-        return await productService.GetEntityOrCreate(productService.scraperContext.Manufacturers, manufacturerName);
+        var manufacturer = await productService.GetEntityOrCreate(productService.scraperContext.Manufacturers, manufacturerName);
+        
+        manufacturerReferences.Add(manufacturerName,manufacturer);
+        
+        return manufacturer;
     }
 
     private async Task fetchData()

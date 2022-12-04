@@ -4,7 +4,9 @@ public class Product : ScraperEntity
 {
     public Category Category { get; set; }
     
-    public Manufacturer Manufacturer { get; set; }
+    public bool Unreliable { get; set; }
+    
+    public Manufacturer? Manufacturer { get; set; }
     
     public Store? Store { get; set; }
     

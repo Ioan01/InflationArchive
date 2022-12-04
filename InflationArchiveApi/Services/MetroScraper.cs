@@ -10,7 +10,7 @@ public class MetroScraper : AbstractStoreScraper
 {
     // ids of the products
     private static readonly string baseIdUrl =
-        "https://produse.metro.ro/explore.articlesearch.v1/search?storeId=00013&language=ro-RO&country=RO&query=*&rows=10&page=1&filter=%FILTER%";
+        "https://produse.metro.ro/explore.articlesearch.v1/search?storeId=00013&language=ro-RO&country=RO&query=*&rows=1000&page=1&filter=%FILTER%";
 
     // data of the products queried
     private static readonly string baseDataUrl =
@@ -71,11 +71,14 @@ public class MetroScraper : AbstractStoreScraper
         string manufacturer = innerData["brandName"].Value<string>();
         double price = ExtractPrice(innerData);
         
-        var qUnit = QuantityAndUnit.getPriceAndUnit(name);
+        var qUnit = QuantityAndUnit.getPriceAndUnit(ref name);
 
-        var manufacturerRef = manufacturerReferences.ContainsKey(manufacturer)
-            ? manufacturerReferences[manufacturer]
-            : await CreateOrGetManufacturer(manufacturer);
+
+        Manufacturer manufacturerRef = null;
+        if (manufacturer != null)
+           manufacturerRef  =  manufacturerReferences.ContainsKey(manufacturer)
+                ? manufacturerReferences[manufacturer]
+                : await CreateOrGetManufacturer(manufacturer);
         
         
         
@@ -100,6 +103,24 @@ public class MetroScraper : AbstractStoreScraper
             baseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/fructe-legume"))
             
         }));
+        
+        requests.Add(new KeyValuePair<string, string[]>("Carne",new []
+        {
+            baseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/carne")),
+            baseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/peste"))
+        }));
+        
+        requests.Add(new KeyValuePair<string, string[]>("Lactate/Oua",new []
+        {
+            baseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/lactate"))
+        }));
+        
+        requests.Add(new KeyValuePair<string, string[]>("Mezeluri",new []
+        {
+            baseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/mezeluri"))
+        }));
+        
+        
         
         return requests;
     }
