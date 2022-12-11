@@ -1,5 +1,6 @@
 using InflationArchive.Models.Products;
 using Quartz;
+using Quartz.Impl.Triggers;
 
 namespace InflationArchive.Services;
 
@@ -31,7 +32,24 @@ public abstract class AbstractStoreScraper : IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-        await fetchData();
+        try
+        {
+            await fetchData();
+        }
+        catch (Exception ex)
+        {
+            var retryTrigger = new SimpleTriggerImpl(Guid.NewGuid().ToString())
+            {
+                Description = "RetryTrigger",
+                RepeatCount = 0,
+                JobKey = context.JobDetail.Key,
+                StartTimeUtc = DateBuilder.NextGivenMinuteDate(DateTime.Now, 30)
+            };
+
+            await context.Scheduler.ScheduleJob(retryTrigger);
+
+            throw new JobExecutionException(ex, false);
+        }
     }
 
     protected abstract List<KeyValuePair<string, string[]>> generateRequests();

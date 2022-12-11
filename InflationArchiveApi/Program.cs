@@ -69,9 +69,20 @@ builder.Services.AddCors(options =>
 builder.Services.AddQuartz(configurator =>
 {
     configurator.UseMicrosoftDependencyInjectionJobFactory();
+
     configurator.AddJob<MetroScraper>(jobConfigurator => jobConfigurator.WithIdentity("metro"));
+    configurator.AddJob<MegaImageScraper>(jobConfigurator => jobConfigurator.WithIdentity("mega-image"));
+
     configurator.AddTrigger(triggerConfigurator =>
     {
+        triggerConfigurator.ForJob("mega-image")
+            .WithIdentity("megaImageTrigger")
+            .WithSimpleSchedule(scheduleBuilder =>
+            {
+                scheduleBuilder.WithIntervalInHours(24)
+                    .RepeatForever();
+            });
+
         triggerConfigurator.ForJob("metro")
             .WithIdentity("metroTrigger")
             .WithSimpleSchedule(scheduleBuilder =>
