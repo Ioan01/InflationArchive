@@ -10,8 +10,6 @@ public class MegaImageScraper : AbstractStoreScraper
     private const string RequestUrlBase =
         "https://api.mega-image.ro/?operationName=GetCategoryProductSearch&variables={\"lang\":\"ro\",\"category\":\"<insert_category>\",\"pageNumber\":<insert_page_number>,\"pageSize\":50}&extensions={\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"10ddc63b94cf5c83b7474746ae22bab24e83d503834a72942577672af7df4cb2\"}}";
 
-    private readonly HttpClient _httpClient = new();
-
     public MegaImageScraper(HttpClient httpClient, ProductService productService) : base(httpClient, productService)
     {
     }
@@ -22,13 +20,15 @@ public class MegaImageScraper : AbstractStoreScraper
     {
         var result = new ConcurrentBag<KeyValuePair<string, string[]>>();
 
-        Parallel.ForEach(Categories.MegaImageCategories.Keys, key =>
+        var tasks = Categories.MegaImageCategories.Keys.Select(async key =>
         {
             result.Add(new KeyValuePair<string, string[]>
             (
-                key, BuildRequestForCategory(key).Result.ToArray()
+                key, (await BuildRequestForCategory(key)).ToArray()
             ));
-        });
+        }).ToArray();
+
+        Task.WaitAll(tasks);
 
         return result.ToList();
     }
@@ -72,14 +72,14 @@ public class MegaImageScraper : AbstractStoreScraper
 
         var codes = Categories.MegaImageCategories[category];
 
-        await Parallel.ForEachAsync(codes, async (c, _) =>
+        var tasks = codes.Select(async c =>
         {
             var req = RequestUrlBase
                 .Replace("<insert_category>", c)
                 .Replace("<insert_page_number>", "0");
 
-            var response = await _httpClient.GetAsync(req, _);
-            var json = await response.Content.ReadAsStringAsync(_);
+            var response = await httpClient.GetAsync(req);
+            var json = await response.Content.ReadAsStringAsync();
 
             var jObj = JObject.Parse(json);
             var nrPages = (int)jObj.SelectToken("data.categoryProductSearch.pagination.totalPages")!;
@@ -91,6 +91,8 @@ public class MegaImageScraper : AbstractStoreScraper
                     .Replace("<insert_page_number>", i.ToString()));
             }
         });
+
+        await Task.WhenAll(tasks);
 
         return result;
     }
