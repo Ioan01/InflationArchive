@@ -13,6 +13,5 @@ public class ScraperContext : DbContext
 
     public ScraperContext(DbContextOptions<ScraperContext> options) : base(options)
     {
-        this.Database.EnsureCreated();
     }
 }

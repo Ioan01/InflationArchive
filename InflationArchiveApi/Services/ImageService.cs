@@ -5,15 +5,18 @@ namespace InflationArchive.Services;
 
 public class ImageService
 {
-    private ScraperContext context;
+    private readonly ScraperContext context;
+    private readonly HttpClient client;
 
-    public ImageService(ScraperContext context)
+    public ImageService(ScraperContext context, HttpClient client)
     {
         this.context = context;
+        this.client = client;
     }
 
     public async Task<Image> UploadImage(string url)
     {
+        await client.GetByteArrayAsync(url);
         return null;
     }
 }

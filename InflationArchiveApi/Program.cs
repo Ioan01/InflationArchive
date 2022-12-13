@@ -71,20 +71,22 @@ builder.Services.AddQuartz(configurator =>
     configurator.UseMicrosoftDependencyInjectionJobFactory();
 
     configurator.AddJob<MetroScraper>(jobConfigurator => jobConfigurator.WithIdentity("metro"));
-    configurator.AddJob<MegaImageScraper>(jobConfigurator => jobConfigurator.WithIdentity("mega-image"));
-
     configurator.AddTrigger(triggerConfigurator =>
     {
-        triggerConfigurator.ForJob("mega-image")
-            .WithIdentity("megaImageTrigger")
+        triggerConfigurator.ForJob("metro")
+            .WithIdentity("metroTrigger")
             .WithSimpleSchedule(scheduleBuilder =>
             {
                 scheduleBuilder.WithIntervalInHours(24)
                     .RepeatForever();
             });
+    });
 
-        triggerConfigurator.ForJob("metro")
-            .WithIdentity("metroTrigger")
+    configurator.AddJob<MegaImageScraper>(jobConfigurator => jobConfigurator.WithIdentity("mega-image"));
+    configurator.AddTrigger(triggerConfigurator =>
+    {
+        triggerConfigurator.ForJob("mega-image")
+            .WithIdentity("megaImageTrigger")
             .WithSimpleSchedule(scheduleBuilder =>
             {
                 scheduleBuilder.WithIntervalInHours(24)
@@ -100,6 +102,16 @@ builder.Services.AddQuartzServer(options =>
 });
 
 var app = builder.Build();
+
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var scraperContext = services.GetRequiredService<ScraperContext>();
+    var userContext = services.GetRequiredService<UserContext>();
+
+    await ContextsInitializer.Initialize(scraperContext, userContext);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
