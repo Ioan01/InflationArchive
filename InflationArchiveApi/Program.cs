@@ -21,21 +21,18 @@ var connectionStringUsers = builder.Configuration.GetValue<string>("ConnectionSt
 builder.Services.AddDbContext<UserContext>(options=>
 {
     options.UseNpgsql(connectionStringUsers);
-},ServiceLifetime.Singleton);
+});
 
 
 var connectionStringScraper = builder.Configuration.GetValue<string>("ConnectionStrings:scraperContext");
 builder.Services.AddDbContext<ScraperContext>(options =>
 {
     options.UseNpgsql(connectionStringScraper);
-},ServiceLifetime.Singleton);
+});
 
-builder.Services.AddSingleton<AccountService>();
-builder.Services.AddSingleton<ImageService>();
-builder.Services.AddSingleton<ProductService>();
-builder.Services.AddSingleton<HttpClient>();
-
-
+builder.Services.AddScoped<AccountService>();
+builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<HttpClient>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

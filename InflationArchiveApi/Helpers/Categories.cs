@@ -1,4 +1,4 @@
-﻿namespace InflationArchive.Services.Helpers;
+﻿namespace InflationArchive.Helpers;
 
 public static class Categories
 {

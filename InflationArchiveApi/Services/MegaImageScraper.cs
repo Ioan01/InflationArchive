@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
+using InflationArchive.Helpers;
 using InflationArchive.Models.Products;
-using InflationArchive.Services.Helpers;
 using Newtonsoft.Json.Linq;
 
 namespace InflationArchive.Services;
@@ -57,9 +57,9 @@ public class MegaImageScraper : AbstractStoreScraper
                 Category = category,
                 Manufacturer = manufacturerRef,
                 Store = storeReference,
-                PricePerUnit = (double)token.SelectToken("price.unitPrice")!,
+                PricePerUnit = Convert.ToDecimal((double)token.SelectToken("price.unitPrice")!),
                 Unit = (string)token.SelectToken("price.unit")!,
-                ImageUri = $"https://d1lqpgkqcok0l.cloudfront.net{(string)token["images"]!.Children().First()["url"]!}"
+                ImageUri = $"https://d1lqpgkqcok0l.cloudfront.net{(string)token["images"]!.Children().Last()["url"]!}"
             });
         }
 

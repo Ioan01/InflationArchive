@@ -7,18 +7,15 @@ namespace InflationArchive.Services;
 public class ProductService
 {
     public ScraperContext scraperContext { get; }
-    private ImageService imageService;
 
-    public ProductService(ScraperContext scraperContext, ImageService imageService)
+    public ProductService(ScraperContext scraperContext)
     {
         this.scraperContext = scraperContext;
-        this.imageService = imageService;
     }
 
-
-    public async Task<T> GetEntityOrCreate<T>(DbSet<T> dbSet,string name) where T : ScraperEntity, new()
+    public async Task<T> GetEntityOrCreate<T>(DbSet<T> dbSet, string name) where T : ScraperEntity, new()
     {
-        var entity = await dbSet.FirstOrDefaultAsync(obj=>obj.Name==name);
+        var entity = await dbSet.FirstOrDefaultAsync(obj => obj.Name == name);
         if (entity == null)
         {
             entity = (await dbSet.AddAsync(new T { Name = name })).Entity;
@@ -49,24 +46,16 @@ public class ProductService
                     productRef.PricePerUnit = product.PricePerUnit;
                     scraperContext.Products.Update(productRef);
                 }
-                else await SaveProduct(product);
-                
-                
+                else
+                    await scraperContext.Products.AddAsync(product);
             }
         }
         catch (Exception)
         {
             await transaction.RollbackAsync();
         }
-            
-            
+
         await transaction.CommitAsync();
         await scraperContext.SaveChangesAsync();
-    }
-
-    private async Task SaveProduct(Product product)
-    {
-        product.Image = await imageService.UploadImage(product.ImageUri ?? string.Empty);
-        scraperContext.Products.Add(product);
     }
 }

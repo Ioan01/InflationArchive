@@ -1,6 +1,5 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Web;
+using InflationArchive.Helpers;
 using InflationArchive.Models.Products;
 using Newtonsoft.Json.Linq;
 
@@ -89,7 +88,7 @@ public class MetroScraper : AbstractStoreScraper
             Manufacturer = manufacturerRef,
             Store = storeReference,
             Category = category,
-            PricePerUnit = price / qUnit.Quantity,
+            PricePerUnit = Convert.ToDecimal(Math.Round(price / qUnit.Quantity, 2)),
             ImageUri = imageUrl
         };
     }

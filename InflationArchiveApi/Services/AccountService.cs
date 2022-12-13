@@ -1,5 +1,6 @@
 using InflationArchive.Contexts;
 using InflationArchive.Models.Account;
+using InflationArchive.Models.Requests;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,15 +19,13 @@ public class AccountService
 
     public async Task RegisterUser(UserRegisterModel model)
     {
-        
         var user = await userContext.Users.AddAsync(new User()
         {
             Email = model.Email,
             UserName = model.Username,
-            
         });
         user.Entity.PasswordHash = passwordHasher.HashPassword(user.Entity, model.Password);
-        
+
         await userContext.SaveChangesAsync();
     }
 
@@ -42,6 +41,7 @@ public class AccountService
         {
             return false;
         }
+
         return true;
     }
 }
