@@ -16,7 +16,7 @@ public class MegaImageScraper : AbstractStoreScraper
 
     protected override string StoreName => "Mega Image";
 
-    protected override List<KeyValuePair<string, string[]>> generateRequests()
+    protected override List<KeyValuePair<string, string[]>> GenerateRequests()
     {
         var result = new ConcurrentBag<KeyValuePair<string, string[]>>();
 
@@ -33,7 +33,7 @@ public class MegaImageScraper : AbstractStoreScraper
         return result.ToList();
     }
 
-    protected override async Task<IEnumerable<Product>> interpretResponse(HttpResponseMessage responseMessage,
+    protected override async Task<IEnumerable<Product>> InterpretResponse(HttpResponseMessage responseMessage,
         Category category)
     {
         var products = new List<Product>();
@@ -47,8 +47,8 @@ public class MegaImageScraper : AbstractStoreScraper
         foreach (var token in productTokens)
         {
             var manufacturerName = (string)token["manufacturerName"]!;
-            var manufacturerRef = manufacturerReferences.ContainsKey(manufacturerName)
-                ? manufacturerReferences[manufacturerName]
+            var manufacturerRef = ManufacturerReferences.ContainsKey(manufacturerName)
+                ? ManufacturerReferences[manufacturerName]
                 : await CreateOrGetManufacturer(manufacturerName);
 
             products.Add(new Product
@@ -56,7 +56,7 @@ public class MegaImageScraper : AbstractStoreScraper
                 Name = (string)token["name"]!,
                 Category = category,
                 Manufacturer = manufacturerRef,
-                Store = storeReference,
+                Store = StoreReference,
                 PricePerUnit = Convert.ToDecimal((double)token.SelectToken("price.unitPrice")!),
                 Unit = (string)token.SelectToken("price.unit")!,
                 ImageUri = $"https://d1lqpgkqcok0l.cloudfront.net{(string)token["images"]!.Children().Last()["url"]!}"
@@ -78,18 +78,16 @@ public class MegaImageScraper : AbstractStoreScraper
                 .Replace("<insert_category>", c)
                 .Replace("<insert_page_number>", "0");
 
-            var response = await httpClient.GetAsync(req);
+            var response = await HttpClient.GetAsync(req);
             var json = await response.Content.ReadAsStringAsync();
 
             var jObj = JObject.Parse(json);
             var nrPages = (int)jObj.SelectToken("data.categoryProductSearch.pagination.totalPages")!;
 
             for (var i = 0; i < nrPages; i++)
-            {
                 result.Add(RequestUrlBase
                     .Replace("<insert_category>", c)
                     .Replace("<insert_page_number>", i.ToString()));
-            }
         });
 
         await Task.WhenAll(tasks);

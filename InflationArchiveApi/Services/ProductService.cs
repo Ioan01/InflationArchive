@@ -15,7 +15,7 @@ public class ProductService
 
     public async Task<T> GetEntityOrCreate<T>(DbSet<T> dbSet, string name) where T : ScraperEntity, new()
     {
-        var entity = await dbSet.FirstOrDefaultAsync(obj => obj.Name == name);
+        var entity = await dbSet.SingleOrDefaultAsync(obj => obj.Name == name);
         if (entity == null)
         {
             entity = (await dbSet.AddAsync(new T { Name = name })).Entity;
@@ -27,35 +27,26 @@ public class ProductService
 
     public async Task AddPriceNode(Product product)
     {
-        
+
     }
-    
+
     public async Task SaveOrUpdateProducts(IEnumerable<Product> products)
     {
-        await using var transaction = await scraperContext.Database.BeginTransactionAsync();
-        try
+        foreach (var product in products)
         {
-            foreach (var product in products)
+            var productRef = await scraperContext.Products.SingleOrDefaultAsync(p =>
+                p.Manufacturer == product.Manufacturer &&
+                p.Name == product.Name && p.Store == product.Store);
+
+            if (productRef != null)
             {
-                var productRef = await scraperContext.Products.FirstOrDefaultAsync(p =>
-                    p.Manufacturer == product.Manufacturer &&
-                    p.Name == product.Name && p.Store == product.Store);
-
-                if (productRef != null)
-                {
-                    productRef.PricePerUnit = product.PricePerUnit;
-                    scraperContext.Products.Update(productRef);
-                }
-                else
-                    await scraperContext.Products.AddAsync(product);
+                productRef.PricePerUnit = product.PricePerUnit;
+                scraperContext.Products.Update(productRef);
             }
-        }
-        catch (Exception)
-        {
-            await transaction.RollbackAsync();
+            else
+                await scraperContext.Products.AddAsync(product);
         }
 
-        await transaction.CommitAsync();
         await scraperContext.SaveChangesAsync();
     }
 }

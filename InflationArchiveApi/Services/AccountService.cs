@@ -31,7 +31,7 @@ public class AccountService
 
     public async Task<User?> FindUserByUsernameOrEmail(string usernameOrEmail)
     {
-        return await userContext.Users.FirstOrDefaultAsync(user =>
+        return await userContext.Users.SingleOrDefaultAsync(user =>
             user.Email == usernameOrEmail || user.UserName == usernameOrEmail);
     }
 
