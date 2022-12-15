@@ -46,7 +46,7 @@ public abstract class AbstractStoreScraper : IJob
     protected abstract List<KeyValuePair<string, string[]>> GenerateRequests();
 
     protected abstract Task<IEnumerable<Product>> InterpretResponse(HttpResponseMessage responseMessage,
-        Category category);
+        int categoryId);
 
     protected async Task<Manufacturer> CreateOrGetManufacturer(string manufacturerName)
     {
@@ -65,6 +65,8 @@ public abstract class AbstractStoreScraper : IJob
 
         var httpRequestsByCategory = GenerateRequests();
 
+        var categoryProducts = new HashSet<Product>();
+
         // for each category
         foreach (var (category, requestMessages) in httpRequestsByCategory)
         {
@@ -77,23 +79,20 @@ public abstract class AbstractStoreScraper : IJob
             // cave our category ref
             var categoryRef = CategoryReferences[category];
 
-
-            var categoryProducts = new List<Product>();
-
             // for each http request in the category
             foreach (var httpRequestMessage in requestMessages)
             {
                 var response = await HttpClient.GetAsync(httpRequestMessage);
 
                 // interpret the products in the request
-                var responseProducts = await InterpretResponse(response, categoryRef);
+                var responseProducts = await InterpretResponse(response, categoryRef.Id);
 
                 // add the products from the request to a larger category list to bulk-update
-                categoryProducts.AddRange(responseProducts);
+                categoryProducts.UnionWith(responseProducts);
             }
-
-            // save or update every product
-            await _productService.SaveOrUpdateProducts(categoryProducts);
         }
+
+        // save or update every product
+        await _productService.SaveOrUpdateProducts(categoryProducts);
     }
 }

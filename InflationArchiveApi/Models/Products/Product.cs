@@ -4,7 +4,6 @@ public class Product : ScraperEntity
 {
     public decimal PricePerUnit { get; set; }
     public string Unit { get; set; }
-    public bool Unreliable { get; set; }
 
     public IEnumerable<ProductPrice> Prices;
 
@@ -16,4 +15,20 @@ public class Product : ScraperEntity
 
     public int StoreId { get; set; }
     public Store Store { get; set; }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is not Product p)
+            return false;
+
+        return Name == p.Name && Unit == p.Unit &&
+               Store.Name == p.Store.Name &&
+               ManufacturerId == p.ManufacturerId &&
+               CategoryId == p.CategoryId;
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Name, Unit, Store.Name, ManufacturerId, CategoryId);
+    }
 }

@@ -34,7 +34,7 @@ public class MegaImageScraper : AbstractStoreScraper
     }
 
     protected override async Task<IEnumerable<Product>> InterpretResponse(HttpResponseMessage responseMessage,
-        Category category)
+        int categoryId)
     {
         var products = new List<Product>();
 
@@ -46,19 +46,19 @@ public class MegaImageScraper : AbstractStoreScraper
 
         foreach (var token in productTokens)
         {
-            var manufacturerName = (string)token["manufacturerName"]!;
+            var manufacturerName = ((string)token["manufacturerName"]!).OnlyFirstCharToUpper();
             var manufacturerRef = ManufacturerReferences.ContainsKey(manufacturerName)
                 ? ManufacturerReferences[manufacturerName]
                 : await CreateOrGetManufacturer(manufacturerName);
 
             products.Add(new Product
             {
-                Name = (string)token["name"]!,
-                Category = category,
-                Manufacturer = manufacturerRef,
+                Name = ((string)token["name"]!).OnlyFirstCharToUpper(),
+                CategoryId = categoryId,
+                ManufacturerId = manufacturerRef.Id,
                 Store = StoreReference,
                 PricePerUnit = Convert.ToDecimal((double)token.SelectToken("price.unitPrice")!),
-                Unit = (string)token.SelectToken("price.unit")!,
+                Unit = ((string)token.SelectToken("price.unit")!).OnlyFirstCharToUpper(),
                 ImageUri = $"https://d1lqpgkqcok0l.cloudfront.net{(string)token["images"]!.Children().Last()["url"]!}"
             });
         }

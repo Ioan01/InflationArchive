@@ -49,7 +49,7 @@ public class MetroScraper : AbstractStoreScraper
         return priceInfo["finalPrice"]!.Value<double>();
     }
 
-    private async Task<Product?> TryExtractProduct(JToken item, Category category)
+    private async Task<Product?> TryExtractProduct(JToken item, int categoryId)
     {
         item = item.First!;
         var outerData = item["variants"]!.First!.First!;
@@ -65,7 +65,7 @@ public class MetroScraper : AbstractStoreScraper
         if (description is null)
             return null;
 
-        var manufacturer = innerData["brandName"]!.Value<string>();
+        var manufacturer = innerData["brandName"]!.Value<string>()?.OnlyFirstCharToUpper();
         if (manufacturer is null)
             return null;
 
@@ -79,13 +79,13 @@ public class MetroScraper : AbstractStoreScraper
             : await CreateOrGetManufacturer(manufacturer);
 
 
-        return new Product()
+        return new Product
         {
-            Name = description,
-            Unit = qUnit.Unit,
-            Manufacturer = manufacturerRef,
+            Name = description.OnlyFirstCharToUpper(),
+            Unit = qUnit.Unit.OnlyFirstCharToUpper(),
+            ManufacturerId = manufacturerRef.Id,
             Store = StoreReference,
-            Category = category,
+            CategoryId = categoryId,
             PricePerUnit = Convert.ToDecimal(Math.Round(price / qUnit.Quantity, 2)),
             ImageUri = imageUrl
         };
@@ -118,7 +118,7 @@ public class MetroScraper : AbstractStoreScraper
         return requests;
     }
 
-    protected override async Task<IEnumerable<Product>> InterpretResponse(HttpResponseMessage responseMessage, Category category)
+    protected override async Task<IEnumerable<Product>> InterpretResponse(HttpResponseMessage responseMessage, int categoryId)
     {
         var products = new List<Product>();
 
@@ -134,18 +134,24 @@ public class MetroScraper : AbstractStoreScraper
 
         foreach (var url in dataRequestUrls)
         {
-            var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
-            requestMessage.Headers.Add("calltreeid", "a");
-
-            var response = await HttpClient.SendAsync(requestMessage);
-
-            var dataJson = JObject.Parse(await response.Content.ReadAsStringAsync());
-
-            foreach (var item in dataJson["result"]!.Children().ToList())
+            try
             {
-                Product? product;
-                if ((product = await TryExtractProduct(item, category)) is not null)
-                    products.Add(product);
+                var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
+                requestMessage.Headers.Add("calltreeid", "a");
+
+                var response = await HttpClient.SendAsync(requestMessage);
+
+                var dataJson = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+                foreach (var item in dataJson["result"]!.Children().ToList())
+                {
+                    Product? product;
+                    if ((product = await TryExtractProduct(item, categoryId)) is not null)
+                        products.Add(product);
+                }
+            }
+            catch
+            {
             }
         }
 

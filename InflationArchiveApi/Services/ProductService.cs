@@ -34,9 +34,11 @@ public class ProductService
     {
         foreach (var product in products)
         {
-            var productRef = await scraperContext.Products.SingleOrDefaultAsync(p =>
-                p.Manufacturer == product.Manufacturer &&
-                p.Name == product.Name && p.Store == product.Store);
+            var productRef = await scraperContext.Products
+                .SingleOrDefaultAsync(p => product.Name == p.Name && product.Unit == p.Unit &&
+                                           product.Store.Name == p.Store.Name &&
+                                           product.ManufacturerId == p.ManufacturerId &&
+                                           product.CategoryId == p.CategoryId);
 
             if (productRef != null)
             {
