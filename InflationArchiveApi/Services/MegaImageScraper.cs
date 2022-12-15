@@ -34,9 +34,9 @@ public class MegaImageScraper : AbstractStoreScraper
     }
 
     protected override async Task<IEnumerable<Product>> InterpretResponse(HttpResponseMessage responseMessage,
-        int categoryId)
+        Category categoryRef)
     {
-        var products = new List<Product>();
+        var products = new HashSet<Product>();
 
         var responseMessageContent = responseMessage.Content;
         var json = await responseMessageContent.ReadAsStringAsync();
@@ -46,21 +46,18 @@ public class MegaImageScraper : AbstractStoreScraper
 
         foreach (var token in productTokens)
         {
-            var manufacturerName = ((string)token["manufacturerName"]!).OnlyFirstCharToUpper();
-            var manufacturerRef = ManufacturerReferences.ContainsKey(manufacturerName)
-                ? ManufacturerReferences[manufacturerName]
-                : await CreateOrGetManufacturer(manufacturerName);
+            var manufacturerName = (string)token["manufacturerName"]!;
 
             products.Add(new Product
-            {
-                Name = ((string)token["name"]!).OnlyFirstCharToUpper(),
-                CategoryId = categoryId,
-                ManufacturerId = manufacturerRef.Id,
-                Store = StoreReference,
-                PricePerUnit = Convert.ToDecimal((double)token.SelectToken("price.unitPrice")!),
-                Unit = ((string)token.SelectToken("price.unit")!).OnlyFirstCharToUpper(),
-                ImageUri = $"https://d1lqpgkqcok0l.cloudfront.net{(string)token["images"]!.Children().Last()["url"]!}"
-            });
+            (
+                (string)token["name"]!,
+                $"https://d1lqpgkqcok0l.cloudfront.net{(string)token["images"]!.Children().Last()["url"]!}",
+                Convert.ToDecimal((double)token.SelectToken("price.unitPrice")!),
+                (string)token.SelectToken("price.unit")!,
+                categoryRef,
+                await GetEntity<Manufacturer>(manufacturerName),
+                await GetEntity<Store>(StoreName)
+            ));
         }
 
         return products;

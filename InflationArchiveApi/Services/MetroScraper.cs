@@ -49,7 +49,7 @@ public class MetroScraper : AbstractStoreScraper
         return priceInfo["finalPrice"]!.Value<double>();
     }
 
-    private async Task<Product?> TryExtractProduct(JToken item, int categoryId)
+    private async Task<Product?> TryExtractProduct(JToken item, Category categoryRef)
     {
         item = item.First!;
         var outerData = item["variants"]!.First!.First!;
@@ -65,8 +65,8 @@ public class MetroScraper : AbstractStoreScraper
         if (description is null)
             return null;
 
-        var manufacturer = innerData["brandName"]!.Value<string>()?.OnlyFirstCharToUpper();
-        if (manufacturer is null)
+        var manufacturerName = innerData["brandName"]!.Value<string>();
+        if (manufacturerName is null)
             return null;
 
         var price = ExtractPrice(innerData);
@@ -74,21 +74,16 @@ public class MetroScraper : AbstractStoreScraper
         var qUnit = QuantityAndUnit.getPriceAndUnit(ref name);
 
 
-        var manufacturerRef = ManufacturerReferences.ContainsKey(manufacturer)
-            ? ManufacturerReferences[manufacturer]
-            : await CreateOrGetManufacturer(manufacturer);
-
-
         return new Product
-        {
-            Name = description.OnlyFirstCharToUpper(),
-            Unit = qUnit.Unit.OnlyFirstCharToUpper(),
-            ManufacturerId = manufacturerRef.Id,
-            Store = StoreReference,
-            CategoryId = categoryId,
-            PricePerUnit = Convert.ToDecimal(Math.Round(price / qUnit.Quantity, 2)),
-            ImageUri = imageUrl
-        };
+        (
+            description,
+            imageUrl,
+            Convert.ToDecimal(Math.Round(price / qUnit.Quantity, 2)),
+            qUnit.Unit,
+            categoryRef,
+            await GetEntity<Manufacturer>(manufacturerName),
+            await GetEntity<Store>(StoreName)
+        );
     }
 
     protected override List<KeyValuePair<string, string[]>> GenerateRequests()
@@ -118,9 +113,9 @@ public class MetroScraper : AbstractStoreScraper
         return requests;
     }
 
-    protected override async Task<IEnumerable<Product>> InterpretResponse(HttpResponseMessage responseMessage, int categoryId)
+    protected override async Task<IEnumerable<Product>> InterpretResponse(HttpResponseMessage responseMessage, Category categoryRef)
     {
-        var products = new List<Product>();
+        var products = new HashSet<Product>();
 
 
         var responseMessageContent = responseMessage.Content;
@@ -146,7 +141,7 @@ public class MetroScraper : AbstractStoreScraper
                 foreach (var item in dataJson["result"]!.Children().ToList())
                 {
                     Product? product;
-                    if ((product = await TryExtractProduct(item, categoryId)) is not null)
+                    if ((product = await TryExtractProduct(item, categoryRef)) is not null)
                         products.Add(product);
                 }
             }

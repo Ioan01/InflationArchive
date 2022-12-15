@@ -13,12 +13,12 @@ public class ProductService
         this.scraperContext = scraperContext;
     }
 
-    public async Task<T> GetEntityOrCreate<T>(DbSet<T> dbSet, string name) where T : ScraperEntity, new()
+    public async Task<T> GetEntityOrCreate<T>(string name) where T : ScraperEntity, new()
     {
-        var entity = await dbSet.SingleOrDefaultAsync(obj => obj.Name == name);
+        var entity = await scraperContext.Set<T>().SingleOrDefaultAsync(obj => obj.Name == name);
         if (entity == null)
         {
-            entity = (await dbSet.AddAsync(new T { Name = name })).Entity;
+            entity = (await scraperContext.Set<T>().AddAsync(new T { Name = name })).Entity;
             await scraperContext.SaveChangesAsync();
         }
 
@@ -35,10 +35,13 @@ public class ProductService
         foreach (var product in products)
         {
             var productRef = await scraperContext.Products
+                .Include(static p => p.Category)
+                .Include(static p => p.Manufacturer)
+                .Include(static p => p.Store)
                 .SingleOrDefaultAsync(p => product.Name == p.Name && product.Unit == p.Unit &&
-                                           product.Store.Name == p.Store.Name &&
-                                           product.ManufacturerId == p.ManufacturerId &&
-                                           product.CategoryId == p.CategoryId);
+                                           product.StoreName == p.Store.Name &&
+                                           product.ManufacturerName == p.Manufacturer.Name &&
+                                           product.CategoryName == p.Category.Name);
 
             if (productRef != null)
             {
