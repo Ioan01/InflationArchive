@@ -8,19 +8,19 @@ public sealed class Product : ScraperEntity
     public decimal PricePerUnit { get; set; }
     public string Unit { get; set; }
 
-    public IEnumerable<ProductPrice> Prices;
+    public ICollection<ProductPrice> ProductPrices;
 
-    public int CategoryId { get; set; }
+    public Guid CategoryId { get; set; }
     public Category Category { get; set; }
 
     [NotMapped] internal readonly string CategoryName;
 
-    public int ManufacturerId { get; set; }
+    public Guid ManufacturerId { get; set; }
     public Manufacturer Manufacturer { get; set; }
 
     [NotMapped] internal readonly string ManufacturerName;
 
-    public int StoreId { get; set; }
+    public Guid StoreId { get; set; }
     public Store Store { get; set; }
 
     [NotMapped] internal readonly string StoreName;
@@ -32,6 +32,8 @@ public sealed class Product : ScraperEntity
     public Product(string name, string? imageUri, decimal pricePerUnit, string unit, Category category,
         Manufacturer manufacturer, Store store)
     {
+        Id = Guid.NewGuid();
+
         Name = name.OnlyFirstCharToUpper();
         ImageUri = imageUri;
         PricePerUnit = pricePerUnit;

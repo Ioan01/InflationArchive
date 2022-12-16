@@ -27,7 +27,12 @@ public class ProductService
 
     public async Task AddPriceNode(Product product)
     {
-
+        await scraperContext.ProductPrices.AddAsync(new ProductPrice
+        {
+            Price = product.PricePerUnit,
+            Date = DateTime.UtcNow.Date,
+            ProductId = product.Id
+        });
     }
 
     public async Task SaveOrUpdateProducts(IEnumerable<Product> products)
@@ -47,9 +52,13 @@ public class ProductService
             {
                 productRef.PricePerUnit = product.PricePerUnit;
                 scraperContext.Products.Update(productRef);
+                await AddPriceNode(productRef);
             }
             else
+            {
                 await scraperContext.Products.AddAsync(product);
+                await AddPriceNode(product);
+            }
         }
 
         await scraperContext.SaveChangesAsync();

@@ -4,5 +4,5 @@ public class Manufacturer : ScraperEntity
 {
     public string? Website { get; set; }
 
-    public IEnumerable<Product> Products { get; set; }
+    public ICollection<Product> Products { get; set; }
 }
