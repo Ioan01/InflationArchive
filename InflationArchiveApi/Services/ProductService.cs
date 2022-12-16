@@ -7,21 +7,18 @@ namespace InflationArchive.Services;
 public class ProductService
 {
     public ScraperContext scraperContext { get; }
-    private ImageService imageService;
 
-    public ProductService(ScraperContext scraperContext, ImageService imageService)
+    public ProductService(ScraperContext scraperContext)
     {
         this.scraperContext = scraperContext;
-        this.imageService = imageService;
     }
 
-
-    public async Task<T> GetEntityOrCreate<T>(DbSet<T> dbSet,string name) where T : ScraperEntity, new()
+    public async Task<T> GetEntityOrCreate<T>(string name) where T : ScraperEntity, new()
     {
-        var entity = await dbSet.FirstOrDefaultAsync(obj=>obj.Name==name);
+        var entity = await scraperContext.Set<T>().SingleOrDefaultAsync(obj => obj.Name == name);
         if (entity == null)
         {
-            entity = (await dbSet.AddAsync(new T { Name = name })).Entity;
+            entity = (await scraperContext.Set<T>().AddAsync(new T { Name = name })).Entity;
             await scraperContext.SaveChangesAsync();
         }
 
@@ -30,43 +27,31 @@ public class ProductService
 
     public async Task AddPriceNode(Product product)
     {
-        
+
     }
-    
+
     public async Task SaveOrUpdateProducts(IEnumerable<Product> products)
     {
-        await using var transaction = await scraperContext.Database.BeginTransactionAsync();
-        try
+        foreach (var product in products)
         {
-            foreach (var product in products)
+            var productRef = await scraperContext.Products
+                .Include(static p => p.Category)
+                .Include(static p => p.Manufacturer)
+                .Include(static p => p.Store)
+                .SingleOrDefaultAsync(p => product.Name == p.Name && product.Unit == p.Unit &&
+                                           product.StoreName == p.Store.Name &&
+                                           product.ManufacturerName == p.Manufacturer.Name &&
+                                           product.CategoryName == p.Category.Name);
+
+            if (productRef != null)
             {
-                var productRef = await scraperContext.Products.FirstOrDefaultAsync(p =>
-                    p.Manufacturer == product.Manufacturer &&
-                    p.Name == product.Name && p.Store == product.Store);
-
-                if (productRef != null)
-                {
-                    productRef.PricePerUnit = product.PricePerUnit;
-                    scraperContext.Products.Update(productRef);
-                }
-                else await SaveProduct(product);
-                
-                
+                productRef.PricePerUnit = product.PricePerUnit;
+                scraperContext.Products.Update(productRef);
             }
+            else
+                await scraperContext.Products.AddAsync(product);
         }
-        catch (Exception)
-        {
-            await transaction.RollbackAsync();
-        }
-            
-            
-        await transaction.CommitAsync();
-        await scraperContext.SaveChangesAsync();
-    }
 
-    private async Task SaveProduct(Product product)
-    {
-        product.Image = await imageService.UploadImage(product.ImageUri ?? string.Empty);
-        scraperContext.Products.Add(product);
+        await scraperContext.SaveChangesAsync();
     }
 }

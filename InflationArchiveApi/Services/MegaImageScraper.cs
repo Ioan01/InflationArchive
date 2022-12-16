@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
+using InflationArchive.Helpers;
 using InflationArchive.Models.Products;
-using InflationArchive.Services.Helpers;
 using Newtonsoft.Json.Linq;
 
 namespace InflationArchive.Services;
@@ -16,7 +16,7 @@ public class MegaImageScraper : AbstractStoreScraper
 
     protected override string StoreName => "Mega Image";
 
-    protected override List<KeyValuePair<string, string[]>> generateRequests()
+    protected override List<KeyValuePair<string, string[]>> GenerateRequests()
     {
         var result = new ConcurrentBag<KeyValuePair<string, string[]>>();
 
@@ -33,10 +33,10 @@ public class MegaImageScraper : AbstractStoreScraper
         return result.ToList();
     }
 
-    protected override async Task<IEnumerable<Product>> interpretResponse(HttpResponseMessage responseMessage,
-        Category category)
+    protected override async Task<IEnumerable<Product>> InterpretResponse(HttpResponseMessage responseMessage,
+        Category categoryRef)
     {
-        var products = new List<Product>();
+        var products = new HashSet<Product>();
 
         var responseMessageContent = responseMessage.Content;
         var json = await responseMessageContent.ReadAsStringAsync();
@@ -47,20 +47,17 @@ public class MegaImageScraper : AbstractStoreScraper
         foreach (var token in productTokens)
         {
             var manufacturerName = (string)token["manufacturerName"]!;
-            var manufacturerRef = manufacturerReferences.ContainsKey(manufacturerName)
-                ? manufacturerReferences[manufacturerName]
-                : await CreateOrGetManufacturer(manufacturerName);
 
             products.Add(new Product
-            {
-                Name = (string)token["name"]!,
-                Category = category,
-                Manufacturer = manufacturerRef,
-                Store = storeReference,
-                PricePerUnit = (double)token.SelectToken("price.unitPrice")!,
-                Unit = (string)token.SelectToken("price.unit")!,
-                ImageUri = $"https://d1lqpgkqcok0l.cloudfront.net{(string)token["images"]!.Children().First()["url"]!}"
-            });
+            (
+                (string)token["name"]!,
+                $"https://d1lqpgkqcok0l.cloudfront.net{(string)token["images"]!.Children().Last()["url"]!}",
+                Convert.ToDecimal((double)token.SelectToken("price.unitPrice")!),
+                (string)token.SelectToken("price.unit")!,
+                categoryRef,
+                await GetEntity<Manufacturer>(manufacturerName),
+                await GetEntity<Store>(StoreName)
+            ));
         }
 
         return products;
@@ -78,18 +75,16 @@ public class MegaImageScraper : AbstractStoreScraper
                 .Replace("<insert_category>", c)
                 .Replace("<insert_page_number>", "0");
 
-            var response = await httpClient.GetAsync(req);
+            var response = await HttpClient.GetAsync(req);
             var json = await response.Content.ReadAsStringAsync();
 
             var jObj = JObject.Parse(json);
             var nrPages = (int)jObj.SelectToken("data.categoryProductSearch.pagination.totalPages")!;
 
             for (var i = 0; i < nrPages; i++)
-            {
                 result.Add(RequestUrlBase
                     .Replace("<insert_category>", c)
                     .Replace("<insert_page_number>", i.ToString()));
-            }
         });
 
         await Task.WhenAll(tasks);

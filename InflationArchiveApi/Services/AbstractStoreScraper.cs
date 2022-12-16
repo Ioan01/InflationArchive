@@ -1,3 +1,4 @@
+using InflationArchive.Helpers;
 using InflationArchive.Models.Products;
 using Quartz;
 using Quartz.Impl.Triggers;
@@ -6,27 +7,16 @@ namespace InflationArchive.Services;
 
 public abstract class AbstractStoreScraper : IJob
 {
-    private static readonly Dictionary<string, Category> categoryReferences = new();
+    private readonly ProductService _productService;
+    private static readonly Dictionary<Type, Dictionary<string, ScraperEntity>> Caches = new();
 
-    protected static Dictionary<string, Manufacturer> manufacturerReferences = new();
-
-    private static readonly int PRODUCT_CAPACITY = 200;
-    protected HttpClient httpClient;
-    private readonly List<KeyValuePair<string, string[]>> httpRequestsByCategory;
-
-    private readonly ProductService productService;
-
-
-    protected Store? storeReference;
+    protected readonly HttpClient HttpClient;
 
     protected AbstractStoreScraper(HttpClient httpClient, ProductService productService)
     {
-        this.httpClient = httpClient;
-        this.productService = productService;
-
-        httpRequestsByCategory = generateRequests();
+        HttpClient = httpClient;
+        _productService = productService;
     }
-
 
     protected abstract string StoreName { get; }
 
@@ -34,7 +24,7 @@ public abstract class AbstractStoreScraper : IJob
     {
         try
         {
-            await fetchData();
+            await FetchData();
         }
         catch (Exception ex)
         {
@@ -52,56 +42,79 @@ public abstract class AbstractStoreScraper : IJob
         }
     }
 
-    protected abstract List<KeyValuePair<string, string[]>> generateRequests();
+    protected abstract List<KeyValuePair<string, string[]>> GenerateRequests();
 
-    protected abstract Task<IEnumerable<Product>> interpretResponse(HttpResponseMessage responseMessage,
-        Category category);
+    /*
+     * Will return an IEnumerable<Product> that contains no duplicates
+     */
+    protected abstract Task<IEnumerable<Product>> InterpretResponse(HttpResponseMessage responseMessage,
+        Category categoryRef);
 
-    protected async Task<Manufacturer> CreateOrGetManufacturer(string manufacturerName,
-        string? manufacturerImage = null)
+    private static Dictionary<string, ScraperEntity> GetCacheFor<T>() where T : ScraperEntity
     {
-        var manufacturer = await productService.GetEntityOrCreate(productService.scraperContext.Manufacturers, manufacturerName);
-        
-        manufacturerReferences.Add(manufacturerName,manufacturer);
-        
-        return manufacturer;
+        var key = typeof(T);
+
+        Dictionary<string, ScraperEntity> cache;
+
+        if (!Caches.ContainsKey(key))
+        {
+            cache = new();
+            Caches[key] = cache;
+        }
+        else
+        {
+            cache = Caches[key];
+        }
+
+        return cache;
     }
 
-    private async Task fetchData()
+    protected async Task<T> GetEntity<T>(string name) where T : ScraperEntity, new()
     {
-        // if this is the first run when the app starts, load the store reference from the database, otherwise create it
-        // aftet the first fetch, the store reference will be non-null
-        storeReference ??= await productService.GetEntityOrCreate(productService.scraperContext.Stores, StoreName);
+        name = name.OnlyFirstCharToUpper();
+
+        var cache = GetCacheFor<T>();
+
+        T entity;
+
+        if (!cache.ContainsKey(name))
+        {
+            entity = await _productService.GetEntityOrCreate<T>(name);
+            cache[name] = entity;
+        }
+        else
+        {
+            entity = (T)cache[name];
+        }
+
+        return entity;
+    }
+
+    private async Task FetchData()
+    {
+        var httpRequestsByCategory = GenerateRequests();
 
         // for each category
-        foreach (var (category, requestMessages) in httpRequestsByCategory)
+        foreach (var (categoryName, requestMessages) in httpRequestsByCategory)
         {
-            // if this is the first run, the categoryRefrence dictionary will be empty, so we will populate it 
-            // after the first run of fetch, the dictionary will contain all key/value pairs 
-            if (!categoryReferences.ContainsKey(category))
-                categoryReferences.Add(category,
-                    await productService.GetEntityOrCreate(productService.scraperContext.Categories, category));
+            var categoryRef = await GetEntity<Category>(categoryName);
 
-            // cave our category ref
-            var categoryRef = categoryReferences[category];
-
-
-            var categoryProducts = new List<Product>(PRODUCT_CAPACITY);
+            var categoryProducts = new HashSet<Product>();
 
             // for each http request in the category
             foreach (var httpRequestMessage in requestMessages)
             {
-                var response = await httpClient.GetAsync(httpRequestMessage);
+                var response = await HttpClient.GetAsync(httpRequestMessage);
 
-                // interpret the products in the reuqest
-                var responseProducts = await interpretResponse(response, categoryRef);
+                // interpret the products in the request
+                var responseProducts = await InterpretResponse(response, categoryRef);
 
                 // add the products from the request to a larger category list to bulk-update
-                categoryProducts.AddRange(responseProducts);
+                categoryProducts.UnionWith(responseProducts);
             }
 
             // save or update every product
-            await productService.SaveOrUpdateProducts(categoryProducts);
+            await _productService.SaveOrUpdateProducts(categoryProducts);
         }
     }
 }

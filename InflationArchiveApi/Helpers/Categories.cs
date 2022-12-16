@@ -1,4 +1,4 @@
-﻿namespace InflationArchive.Services.Helpers;
+﻿namespace InflationArchive.Helpers;
 
 public static class Categories
 {
@@ -25,5 +25,5 @@ public static class Categories
         };
     }
 
-    public static Dictionary<string, ISet<string>> MegaImageCategories { get; }
+    public static IDictionary<string, ISet<string>> MegaImageCategories { get; }
 }

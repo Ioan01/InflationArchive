@@ -1,6 +1,5 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Web;
+using InflationArchive.Helpers;
 using InflationArchive.Models.Products;
 using Newtonsoft.Json.Linq;
 
@@ -9,34 +8,32 @@ namespace InflationArchive.Services;
 public class MetroScraper : AbstractStoreScraper
 {
     // ids of the products
-    private static readonly string baseIdUrl =
-        "https://produse.metro.ro/explore.articlesearch.v1/search?storeId=00013&language=ro-RO&country=RO&query=*&rows=1000&page=1&filter=%FILTER%";
+    private const string BaseIdUrl = "https://produse.metro.ro/explore.articlesearch.v1/search?storeId=00013&language=ro-RO&country=RO&query=*&rows=1000&page=1&filter=%FILTER%";
 
     // data of the products queried
-    private static readonly string baseDataUrl =
-        "https://produse.metro.ro/evaluate.article.v1/betty-variants?storeIds=00013&country=RO&locale=ro-RO"; 
-    
-    
+    private const string BaseDataUrl = "https://produse.metro.ro/evaluate.article.v1/betty-variants?storeIds=00013&country=RO&locale=ro-RO";
+
+
     public MetroScraper(HttpClient httpClient, ProductService productService) : base(httpClient, productService)
     {
     }
 
     protected override string StoreName => "Metro";
 
-    private List<string> GenerateDataUrls(List<JToken> idList)
+    private static List<string> GenerateDataUrls(List<JToken> idList)
     {
-        List<string> dataRequestUrls = new List<string>();
-        string dataUrl = baseDataUrl;
-        
-        
-        for (int i = 1; i <= idList.Count; i++)
+        var dataRequestUrls = new List<string>();
+        var dataUrl = BaseDataUrl;
+
+
+        for (var i = 1; i <= idList.Count; i++)
         {
-            dataUrl += "&ids=" + idList[i-1].Value<string>();
+            dataUrl += "&ids=" + idList[i - 1].Value<string>();
             if (i % 40 == 0)
             {
                 dataRequestUrls.Add(dataUrl);
 
-                dataUrl = baseDataUrl;
+                dataUrl = BaseDataUrl;
             }
         }
 
@@ -45,119 +42,114 @@ public class MetroScraper : AbstractStoreScraper
         return dataRequestUrls;
     }
 
-    private double ExtractPrice(JToken item)
+    private static double ExtractPrice(JToken item)
     {
-        var priceInfo = item
-            ["stores"].First.First
-            ["sellingPriceInfo"];
+        var priceInfo = item["stores"]!.First!.First!["sellingPriceInfo"]!;
 
-        return priceInfo["finalPrice"].Value<double>();
-
+        return priceInfo["finalPrice"]!.Value<double>();
     }
 
-    private async Task<Product> ExtractProduct(JToken item,Category category)
+    private async Task<Product?> TryExtractProduct(JToken item, Category categoryRef)
     {
-        item = item.First;
-        var outerData = item["variants"].First.First;
-        
-        
-        string imageUrl = outerData["imageUrl"].Value<string>();
-        string name = outerData["description"]!.Value<string>();
-        
+        item = item.First!;
+        var outerData = item["variants"]!.First!.First!;
 
-        var innerData = outerData["bundles"].First.First;
 
-        string description = innerData!["description"]!.Value<string>();
-        string manufacturer = innerData["brandName"].Value<string>();
-        double price = ExtractPrice(innerData);
-        
+        var imageUrl = outerData["imageUrl"]!.Value<string>();
+        var name = outerData["description"]!.Value<string>()!;
+
+
+        var innerData = outerData["bundles"]!.First!.First!;
+
+        var description = innerData["description"]!.Value<string>();
+        if (description is null)
+            return null;
+
+        var manufacturerName = innerData["brandName"]!.Value<string>();
+        if (manufacturerName is null)
+            return null;
+
+        var price = ExtractPrice(innerData);
+
         var qUnit = QuantityAndUnit.getPriceAndUnit(ref name);
 
 
-        Manufacturer manufacturerRef = null;
-        if (manufacturer != null)
-           manufacturerRef  =  manufacturerReferences.ContainsKey(manufacturer)
-                ? manufacturerReferences[manufacturer]
-                : await CreateOrGetManufacturer(manufacturer);
-        
-        
-        
-        return new Product()
-        {
-            Name = description,
-            Unit = qUnit.Unit,
-            Manufacturer = manufacturerRef,
-            Store = storeReference,
-            Category = category,
-            PricePerUnit = price / qUnit.Quantity,
-            ImageUri = imageUrl
-        };
+        return new Product
+        (
+            description,
+            imageUrl,
+            Convert.ToDecimal(Math.Round(price / qUnit.Quantity, 2)),
+            qUnit.Unit,
+            categoryRef,
+            await GetEntity<Manufacturer>(manufacturerName),
+            await GetEntity<Store>(StoreName)
+        );
     }
 
-    protected override  List<KeyValuePair<string, string[]>> generateRequests()
+    protected override List<KeyValuePair<string, string[]>> GenerateRequests()
     {
-        var requests = new List<KeyValuePair<string, string[]>>();
-        
-        requests.Add(new KeyValuePair<string, string[]>("Fructe/Legume",new []
+        var requests = new List<KeyValuePair<string, string[]>>
         {
-            baseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/fructe-legume"))
-            
-        }));
-        
-        requests.Add(new KeyValuePair<string, string[]>("Carne",new []
-        {
-            baseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/carne")),
-            baseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/peste"))
-        }));
-        
-        requests.Add(new KeyValuePair<string, string[]>("Lactate/Oua",new []
-        {
-            baseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/lactate"))
-        }));
-        
-        requests.Add(new KeyValuePair<string, string[]>("Mezeluri",new []
-        {
-            baseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/mezeluri"))
-        }));
-        
-        
-        
+            new("Fructe/Legume", new[]
+            {
+                BaseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/fructe-legume"))
+            }),
+            new("Carne", new[]
+            {
+                BaseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/carne")),
+                BaseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/peste"))
+            }),
+            new("Lactate/Oua", new[]
+            {
+                BaseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/lactate"))
+            }),
+            new("Mezeluri", new[]
+            {
+                BaseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/mezeluri"))
+            })
+        };
+
+
         return requests;
     }
 
-    protected override async Task<IEnumerable<Product>> interpretResponse(HttpResponseMessage responseMessage, Category category)
+    protected override async Task<IEnumerable<Product>> InterpretResponse(HttpResponseMessage responseMessage, Category categoryRef)
     {
-        List<Product> products = new List<Product>();
+        var products = new HashSet<Product>();
 
 
         var responseMessageContent = responseMessage.Content;
         var stringAsync = await responseMessageContent.ReadAsStringAsync();
         var result = JObject.Parse(stringAsync);
 
-        var resultIds = result["resultIds"];
-        
-        
+        var resultIds = result["resultIds"]!;
+
+
         var dataRequestUrls = GenerateDataUrls(resultIds.ToList());
-        
+
         foreach (var url in dataRequestUrls)
         {
-            HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
-            requestMessage.Headers.Add("calltreeid","a");
-
-            var response = await httpClient.SendAsync(requestMessage);
-
-            var dataJson = JObject.Parse(await response.Content.ReadAsStringAsync());
-
-            foreach (var item in dataJson["result"].Children().ToList())
+            try
             {
-                products.Add(await ExtractProduct(item, category));
+                var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
+                requestMessage.Headers.Add("calltreeid", "a");
+
+                var response = await HttpClient.SendAsync(requestMessage);
+
+                var dataJson = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+                foreach (var item in dataJson["result"]!.Children().ToList())
+                {
+                    Product? product;
+                    if ((product = await TryExtractProduct(item, categoryRef)) is not null)
+                        products.Add(product);
+                }
+            }
+            catch
+            {
             }
         }
-        
-        
-        
+
         return products;
     }
-
-    
 }
