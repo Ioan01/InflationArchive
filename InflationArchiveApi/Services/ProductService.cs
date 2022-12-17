@@ -1,4 +1,5 @@
 using InflationArchive.Contexts;
+using InflationArchive.Helpers;
 using InflationArchive.Models.Products;
 using Microsoft.EntityFrameworkCore;
 
@@ -62,5 +63,36 @@ public class ProductService
         }
 
         await scraperContext.SaveChangesAsync();
+    }
+
+    public async Task<IEnumerable<Product>> GetProducts(Filter filter)
+    {
+        var filtered = scraperContext.Products
+            .Include(static p => p.Category)
+            .Include(static p => p.Manufacturer)
+            .Include(static p => p.Store)
+            .Where(p =>
+                EF.Functions.ILike(p.Name, $"%{filter.Name}%") &&
+                EF.Functions.ILike(p.Category.Name, $"%{filter.Category}%") &&
+                p.PricePerUnit >= filter.MinPrice && p.PricePerUnit <= filter.MaxPrice
+            );
+
+        IOrderedQueryable<Product> ordered;
+
+        if (filter.Order == FilterConstants.Ascending)
+        {
+            ordered = filter.OrderBy == FilterConstants.OrderByPrice
+                ? filtered.OrderBy(static p => p.PricePerUnit)
+                : filtered.OrderBy(static p => p.Name);
+        }
+
+        else
+        {
+            ordered = filter.OrderBy == FilterConstants.OrderByPrice
+                ? filtered.OrderByDescending(static p => p.PricePerUnit)
+                : filtered.OrderByDescending(static p => p.Name);
+        }
+
+        return await ordered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
     }
 }
