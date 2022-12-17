@@ -3,8 +3,7 @@ import RegisterViewVue from "@/views/RegisterView.vue";
 import Vue from "vue";
 import VueRouter from "vue-router";
 import HomeView from "../views/HomeView.vue";
-import UserViewVue from "@/views/UserView.vue";
-import ProductsViewVue from "@/views/ProductsView.vue";
+
 Vue.use(VueRouter);
 
 const routes = [
@@ -24,16 +23,7 @@ const routes = [
     name: "login",
     component: LoginViewVue,
   },
-  {
-    path: "/userPage",
-    name: "user",
-    component: UserViewVue,
-  },
-  {
-    path: "/products",
-    name: "products",
-    component: ProductsViewVue
-  }
+
   // {
   //   path: '/about',
   //   name: 'about',
