@@ -47,11 +47,15 @@ public class MegaImageScraper : AbstractStoreScraper
         foreach (var token in productTokens)
         {
             var manufacturerName = (string)token["manufacturerName"]!;
+            var imageUriSecondPart = (string?)token["images"]!.Children().LastOrDefault()?["url"];
+            var imageUri = imageUriSecondPart is null
+                ? null
+                : $"https://d1lqpgkqcok0l.cloudfront.net{imageUriSecondPart}";
 
             products.Add(new Product
             (
                 (string)token["name"]!,
-                $"https://d1lqpgkqcok0l.cloudfront.net{(string)token["images"]!.Children().Last()["url"]!}",
+                imageUri,
                 (double)token.SelectToken("price.unitPrice")!,
                 (string)token.SelectToken("price.unit")!,
                 categoryRef,
