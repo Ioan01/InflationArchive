@@ -74,7 +74,7 @@ builder.Services.AddQuartz(configurator =>
             .WithIdentity("metroTrigger")
             .WithSimpleSchedule(scheduleBuilder =>
             {
-                scheduleBuilder.WithIntervalInHours(24)
+                scheduleBuilder.WithIntervalInHours(12)
                     .RepeatForever();
             });
     });
@@ -86,7 +86,7 @@ builder.Services.AddQuartz(configurator =>
             .WithIdentity("megaImageTrigger")
             .WithSimpleSchedule(scheduleBuilder =>
             {
-                scheduleBuilder.WithIntervalInHours(24)
+                scheduleBuilder.WithIntervalInHours(12)
                     .RepeatForever();
             });
     });

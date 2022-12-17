@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Web;
 using InflationArchive.Helpers;
 using InflationArchive.Models.Products;
@@ -70,10 +71,8 @@ public class MetroScraper : AbstractStoreScraper
             return null;
 
         var price = ExtractPrice(innerData);
-
         var qUnit = QuantityAndUnit.getPriceAndUnit(ref name);
-
-
+        
         return new Product
         (
             description,
@@ -85,7 +84,7 @@ public class MetroScraper : AbstractStoreScraper
             await GetEntity<Store>(StoreName)
         );
     }
-
+    
     protected override List<KeyValuePair<string, string[]>> GenerateRequests()
     {
         var requests = new List<KeyValuePair<string, string[]>>

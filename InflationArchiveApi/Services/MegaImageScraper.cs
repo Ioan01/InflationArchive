@@ -44,16 +44,28 @@ public class MegaImageScraper : AbstractStoreScraper
 
         var productTokens = result["data"]!["categoryProductSearch"]!["products"]!.ToList();
 
+        
+        
+        
         foreach (var token in productTokens)
         {
             var manufacturerName = (string)token["manufacturerName"]!;
+            var imageUriSecondPart = (string?)token["images"]!.Children().LastOrDefault()?["url"];
+            var imageUri = imageUriSecondPart is null
+                ? null
+                : $"https://d1lqpgkqcok0l.cloudfront.net{imageUriSecondPart}";
+
+            var name = (string)token["name"]!;
+            var price = (double)token.SelectToken("price.unitPrice")!;
+            
+            var qUnit = QuantityAndUnit.getPriceAndUnit(ref name);
 
             products.Add(new Product
             (
-                (string)token["name"]!,
-                $"https://d1lqpgkqcok0l.cloudfront.net{(string)token["images"]!.Children().Last()["url"]!}",
-                Convert.ToDecimal((double)token.SelectToken("price.unitPrice")!),
-                (string)token.SelectToken("price.unit")!,
+                name,
+                imageUri,
+                Convert.ToDecimal(Math.Round(price / qUnit.Quantity, 2)),
+                qUnit.Unit,
                 categoryRef,
                 await GetEntity<Manufacturer>(manufacturerName),
                 await GetEntity<Store>(StoreName)
