@@ -1,15 +1,16 @@
-using System.Text.RegularExpressions;
+
 using System.Web;
 using InflationArchive.Helpers;
 using InflationArchive.Models.Products;
 using Newtonsoft.Json.Linq;
+
 
 namespace InflationArchive.Services;
 
 public class MetroScraper : AbstractStoreScraper
 {
     // ids of the products
-    private const string BaseIdUrl = "https://produse.metro.ro/explore.articlesearch.v1/search?storeId=00013&language=ro-RO&country=RO&query=*&rows=1000&page=1&filter=%FILTER%";
+    private const string baseIdUrl = "https://produse.metro.ro/explore.articlesearch.v1/search?storeId=00013&language=ro-RO&country=RO&query=*&rows=1000&page=1&filter=%FILTER%";
 
     // data of the products queried
     private const string BaseDataUrl = "https://produse.metro.ro/evaluate.article.v1/betty-variants?storeIds=00013&country=RO&locale=ro-RO";
@@ -87,28 +88,19 @@ public class MetroScraper : AbstractStoreScraper
     
     protected override List<KeyValuePair<string, string[]>> GenerateRequests()
     {
-        var requests = new List<KeyValuePair<string, string[]>>
+        var requests = new List<KeyValuePair<string, string[]>>();
+        
+        
+        foreach (var (category,categoryFilters) in Categories.MetroCategories)
         {
-            new("Fructe/Legume", new[]
-            {
-                BaseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/fructe-legume"))
-            }),
-            new("Carne", new[]
-            {
-                BaseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/carne")),
-                BaseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/peste"))
-            }),
-            new("Lactate/Oua", new[]
-            {
-                BaseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/lactate"))
-            }),
-            new("Mezeluri", new[]
-            {
-                BaseIdUrl.Replace("%FILTER%",HttpUtility.UrlEncode("category:alimentare/mezeluri"))
-            })
-        };
-
-
+            requests.Add(new KeyValuePair<string, string[]>(category,
+                categoryFilters.Select(str=> 
+                    baseIdUrl.Replace("%FILTER%", 
+                        HttpUtility.HtmlEncode($"category:alimentare/{str}"))).ToArray()));
+        }
+        
+        
+        
         return requests;
     }
 
