@@ -95,4 +95,14 @@ public class ProductService
 
         return await ordered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
     }
+
+    public async Task<Product?> GetProduct(Guid id)
+    {
+        return await scraperContext.Products
+            .Include(static p => p.Category)
+            .Include(static p => p.Manufacturer)
+            .Include(static p => p.Store)
+            .Include(static p => p.ProductPrices)
+            .SingleOrDefaultAsync(p => p.Id == id);
+    }
 }

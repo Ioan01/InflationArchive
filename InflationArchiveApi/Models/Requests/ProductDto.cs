@@ -9,7 +9,7 @@ public class ProductDto
     public string? ImageUri { get; set; }
     public decimal PricePerUnit { get; set; }
     public string Unit { get; set; }
-    public ICollection<ProductPriceDto> Prices { get; set; }
+    public ICollection<ProductPriceDto> ProductPrices { get; set; }
     public string Category { get; set; }
     public string Manufacturer { get; set; }
     public string Store { get; set; }

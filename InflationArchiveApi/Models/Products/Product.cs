@@ -8,7 +8,7 @@ public sealed class Product : ScraperEntity
     public decimal PricePerUnit { get; set; }
     public string Unit { get; set; }
 
-    public ICollection<ProductPrice> ProductPrices;
+    public ICollection<ProductPrice> ProductPrices { get; set; }
 
     public Guid CategoryId { get; set; }
     public Category Category { get; set; }
