@@ -24,6 +24,7 @@
         </div>
     </v-form>
 </template>
+
 <script lang="ts">import { address } from '@/store/environment';
 import { defineComponent } from 'vue';
 import { useGlobalStore } from '../store/global';
@@ -36,7 +37,6 @@ export default defineComponent({
     setup() {
         const { loggedIn } = storeToRefs(useGlobalStore())
         let loginModel: any = { LoginName: '', Password: '', RememberMe: false }
-
 
         return {
             loginModel,
