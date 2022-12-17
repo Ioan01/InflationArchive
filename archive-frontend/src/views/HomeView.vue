@@ -1,7 +1,6 @@
-import { useGlobalStore } from '../store/global';
 <template lang="html">
     <div>
-        <span>home</span>
+        <span>Welcome to Inflation Archive</span>
     </div>
 </template>
 <script lang="ts">import { useGlobalStore } from '@/store/global';

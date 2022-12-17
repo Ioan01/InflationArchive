@@ -1,4 +1,3 @@
-import { useGlobalStore } from '../store/global';
 <template>
     <div>
         <v-toolbar color="" dense class="mb-5" elevation="4">
@@ -12,6 +11,10 @@ import { useGlobalStore } from '../store/global';
                 class="">
             </v-text-field>
             <v-spacer></v-spacer>
+            <router-link to="/products" class="router-link">
+                    <v-btn color="primary">Products</v-btn>
+                </router-link>
+            <v-spacer></v-spacer>
             <div v-if="loggedIn === false">
                 <router-link to="/login" class="ml-1 mr-1 router-link">
                     <v-btn color="primary">Login</v-btn>
@@ -23,7 +26,9 @@ import { useGlobalStore } from '../store/global';
 
             <div v-if="loggedIn === true">
                 <v-btn color="primary">Logout</v-btn>
-                <v-btn color="primary">Account</v-btn>
+                <router-link to="/userPage"  class="router-link">
+                    <v-btn color="primary">Account</v-btn>
+                </router-link>
             </div>
 
 
