@@ -52,7 +52,7 @@ public class MegaImageScraper : AbstractStoreScraper
             (
                 (string)token["name"]!,
                 $"https://d1lqpgkqcok0l.cloudfront.net{(string)token["images"]!.Children().Last()["url"]!}",
-                Convert.ToDecimal((double)token.SelectToken("price.unitPrice")!),
+                (double)token.SelectToken("price.unitPrice")!,
                 (string)token.SelectToken("price.unit")!,
                 categoryRef,
                 await GetEntity<Manufacturer>(manufacturerName),

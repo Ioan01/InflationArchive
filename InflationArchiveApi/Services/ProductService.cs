@@ -25,18 +25,20 @@ public class ProductService
         return entity;
     }
 
-    public async Task AddPriceNode(Product product)
+    public async Task AddPriceNode(Product product, DateTime dateTime)
     {
         await scraperContext.ProductPrices.AddAsync(new ProductPrice
         {
             Price = product.PricePerUnit,
-            Date = DateTime.UtcNow.Date,
+            Date = dateTime,
             ProductId = product.Id
         });
     }
 
     public async Task SaveOrUpdateProducts(IEnumerable<Product> products)
     {
+        var dateTime = DateTime.UtcNow.Date.AddHours(DateTime.UtcNow.Hour);
+
         foreach (var product in products)
         {
             var productRef = await scraperContext.Products
@@ -51,13 +53,14 @@ public class ProductService
             if (productRef != null)
             {
                 productRef.PricePerUnit = product.PricePerUnit;
+                productRef.ImageUri = product.ImageUri;
                 scraperContext.Products.Update(productRef);
-                await AddPriceNode(productRef);
+                await AddPriceNode(productRef, dateTime);
             }
             else
             {
                 await scraperContext.Products.AddAsync(product);
-                await AddPriceNode(product);
+                await AddPriceNode(product, dateTime);
             }
         }
 

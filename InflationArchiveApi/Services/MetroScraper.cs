@@ -1,5 +1,5 @@
+using System.Text.RegularExpressions;
 using System.Web;
-using InflationArchive.Helpers;
 using InflationArchive.Models.Products;
 using Newtonsoft.Json.Linq;
 
@@ -7,6 +7,8 @@ namespace InflationArchive.Services;
 
 public class MetroScraper : AbstractStoreScraper
 {
+    private const string WeightsUnitRegex = @"\d+ *((mg)|g|(gr)|(kg)|(ml)|l)\b";
+
     // ids of the products
     private const string BaseIdUrl = "https://produse.metro.ro/explore.articlesearch.v1/search?storeId=00013&language=ro-RO&country=RO&query=*&rows=1000&page=1&filter=%FILTER%";
 
@@ -71,19 +73,40 @@ public class MetroScraper : AbstractStoreScraper
 
         var price = ExtractPrice(innerData);
 
-        var qUnit = QuantityAndUnit.getPriceAndUnit(ref name);
-
 
         return new Product
         (
             description,
             imageUrl,
-            Convert.ToDecimal(Math.Round(price / qUnit.Quantity, 2)),
-            qUnit.Unit,
+            price,
+            GetUnit(name),
             categoryRef,
             await GetEntity<Manufacturer>(manufacturerName),
             await GetEntity<Store>(StoreName)
         );
+    }
+
+    /*
+     * From my observations, MegaImage only has two units, so maybe Metro should follow suit:
+     *
+     * 1) For "vrac" products, they use "Kg" because how else are you gonna measure them =))
+     * 2) For any other type, like for example a 6x200g pack of cat food, they use "Piece"
+     * because that pack is basically a piece.
+     *
+     * I have implemented exactly this:
+     * 2) If there are weights followed by unit (eg: 200g) or "bucati" is explicitly stated,
+     * then it means it's not "vrac" so use "Piece"
+     * 1) Else, it's "vrac" so use "Kg"
+     */
+    private static string GetUnit(string name)
+    {
+        if (name.Contains("buc", StringComparison.InvariantCultureIgnoreCase) ||
+            name.Contains("bucati", StringComparison.InvariantCultureIgnoreCase))
+            return "Piece";
+
+        return Regex.IsMatch(name, WeightsUnitRegex, RegexOptions.IgnoreCase)
+            ? "Piece"
+            : "Kg";
     }
 
     protected override List<KeyValuePair<string, string[]>> GenerateRequests()
@@ -143,6 +166,9 @@ public class MetroScraper : AbstractStoreScraper
                     Product? product;
                     if ((product = await TryExtractProduct(item, categoryRef)) is not null)
                         products.Add(product);
+                    else
+                    {
+                    }
                 }
             }
             catch

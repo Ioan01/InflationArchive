@@ -7,6 +7,7 @@ public sealed class Product : ScraperEntity
 {
     public decimal PricePerUnit { get; set; }
     public string Unit { get; set; }
+    public bool IsUnreliable { get; set; }
 
     public ICollection<ProductPrice> ProductPrices;
 
@@ -29,14 +30,14 @@ public sealed class Product : ScraperEntity
     {
     }
 
-    public Product(string name, string? imageUri, decimal pricePerUnit, string unit, Category category,
+    public Product(string name, string? imageUri, double pricePerUnit, string unit, Category category,
         Manufacturer manufacturer, Store store)
     {
         Id = Guid.NewGuid();
 
         Name = name.OnlyFirstCharToUpper();
         ImageUri = imageUri;
-        PricePerUnit = pricePerUnit;
+        PricePerUnit = Convert.ToDecimal(Math.Round(pricePerUnit, 2));
         Unit = unit.OnlyFirstCharToUpper();
 
         CategoryId = category.Id;
