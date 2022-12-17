@@ -30,7 +30,7 @@ public sealed class Product : ScraperEntity
     {
     }
 
-    public Product(string name, string? imageUri, double pricePerUnit, string unit, Category category,
+    public Product(string name, string? imageUri, decimal pricePerUnit, string unit, Category category,
         Manufacturer manufacturer, Store store)
     {
         Id = Guid.NewGuid();
