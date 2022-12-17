@@ -166,9 +166,6 @@ public class MetroScraper : AbstractStoreScraper
                     Product? product;
                     if ((product = await TryExtractProduct(item, categoryRef)) is not null)
                         products.Add(product);
-                    else
-                    {
-                    }
                 }
             }
             catch
