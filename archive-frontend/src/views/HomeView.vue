@@ -1,7 +1,7 @@
 import { useGlobalStore } from '../store/global';
 <template lang="html">
     <div>
-        <span>home</span>
+        <h2 class="text-center mt-5">Welcome to Inflation Archive!</h2>
     </div>
 </template>
 <script lang="ts">import { useGlobalStore } from '@/store/global';
@@ -13,7 +13,6 @@ export default {
         const store = useGlobalStore()
         store
     }
-
 
 }
 </script>
