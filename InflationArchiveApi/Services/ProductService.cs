@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using InflationArchive.Contexts;
 using InflationArchive.Helpers;
+using InflationArchive.Models.Account;
 using InflationArchive.Models.Products;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,11 +9,13 @@ namespace InflationArchive.Services;
 
 public class ProductService
 {
-    public ScraperContext scraperContext { get; }
+    private ScraperContext scraperContext { get; }
+    private UserContext userContext;
 
-    public ProductService(ScraperContext scraperContext)
+    public ProductService(ScraperContext scraperContext, UserContext userContext)
     {
         this.scraperContext = scraperContext;
+        this.userContext = userContext;
     }
 
     public async Task<T> GetEntityOrCreate<T>(string name) where T : ScraperEntity, new()
@@ -69,7 +72,7 @@ public class ProductService
         await scraperContext.SaveChangesAsync();
     }
 
-    public async Task<IEnumerable<Product>> GetProducts(Filter filter)
+    private IQueryable<Product> FilterProducts(Filter filter)
     {
         var filtered = scraperContext.Products
             .Include(static p => p.Category)
@@ -91,7 +94,23 @@ public class ProductService
 
         var ordered = filtered.OrderBy(propertyName, descending);
 
-        return await ordered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
+        return ordered;
+    }
+    
+    public async Task<IEnumerable<Product>> GetProducts(Filter filter)
+    {
+        var queried = FilterProducts(filter);
+
+        return await queried.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
+    }
+
+    public async Task<IEnumerable<Product>> GetFavoriteProducts(Guid userGuid,Filter filter)
+    {
+        var favoritedProducts = await userContext.UserFavorites.Select(u => u.Product).ToListAsync();
+
+        var products = FilterProducts(filter).Where(p => favoritedProducts.Contains(p));
+
+        return await products.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
     }
 
     public async Task<Product?> GetProduct(Guid id)

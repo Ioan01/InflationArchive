@@ -1,5 +1,8 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace InflationArchive.Models.Products;
 
+[Table("ProductPrice")]
 public class ProductPrice
 {
     public Guid Id { get; set; }

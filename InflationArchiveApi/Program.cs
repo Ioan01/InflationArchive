@@ -113,7 +113,7 @@ using (var scope = app.Services.CreateScope())
     var scraperContext = services.GetRequiredService<ScraperContext>();
     var userContext = services.GetRequiredService<UserContext>();
 
-    await ContextsInitializer.Initialize(scraperContext, userContext);
+    await ContextsInitializer.Initialize(userContext, scraperContext);
 }
 
 // Configure the HTTP request pipeline.

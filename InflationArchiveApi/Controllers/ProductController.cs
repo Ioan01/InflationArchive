@@ -2,6 +2,7 @@
 using InflationArchive.Models.Products;
 using InflationArchive.Models.Requests;
 using InflationArchive.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InflationArchive.Controllers;
@@ -11,10 +12,12 @@ namespace InflationArchive.Controllers;
 public class ProductController : ControllerBase
 {
     private readonly ProductService _productService;
+    private AccountService _accountService;
 
-    public ProductController(ProductService productService)
+    public ProductController(ProductService productService, AccountService accountService)
     {
         _productService = productService;
+        this._accountService = accountService;
     }
 
     [HttpGet]
@@ -57,5 +60,23 @@ public class ProductController : ControllerBase
             Manufacturer = product.Manufacturer.Name,
             Store = product.Store.Name,
         };
+    }
+    
+    [HttpGet]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<ProductDto>>> GetFavorites([FromQuery] Filter filter)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest();
+        
+
+        var userIdClaim = _accountService.GetUserIdClaim(HttpContext.User.Claims);
+        
+        if (userIdClaim is null)
+            return Unauthorized();
+
+        var products = await _productService.GetFavoriteProducts(Guid.Parse(userIdClaim.Value), filter);
+
+        return Ok(ProductsToDto(products));
     }
 }
