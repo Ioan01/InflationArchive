@@ -12,6 +12,10 @@ import { useGlobalStore } from '../store/global';
                 class="">
             </v-text-field>
             <v-spacer></v-spacer>
+                <router-link to="/products" class="ml-1 mr-1 router-link">
+                        <v-btn color="primary">Products</v-btn>
+                    </router-link>
+            <v-spacer></v-spacer>
             <div v-if="loggedIn === false">
                 <router-link to="/login" class="ml-1 mr-1 router-link">
                     <v-btn color="primary">Login</v-btn>
