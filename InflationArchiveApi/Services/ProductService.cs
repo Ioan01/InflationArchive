@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using InflationArchive.Contexts;
 using InflationArchive.Helpers;
 using InflationArchive.Models.Products;
@@ -80,21 +81,15 @@ public class ProductService
                 p.PricePerUnit >= filter.MinPrice && p.PricePerUnit <= filter.MaxPrice
             );
 
-        IOrderedQueryable<Product> ordered;
-
-        if (filter.Order == FilterConstants.Ascending)
+        var descending = filter.Order == FilterConstants.Descending;
+        var propertyName = filter.OrderBy switch
         {
-            ordered = filter.OrderBy == FilterConstants.OrderByPrice
-                ? filtered.OrderBy(static p => p.PricePerUnit)
-                : filtered.OrderBy(static p => p.Name);
-        }
+            FilterConstants.OrderByPrice => nameof(Product.PricePerUnit),
+            FilterConstants.OrderByName => nameof(Product.Name),
+            _ => throw new InvalidEnumArgumentException()
+        };
 
-        else
-        {
-            ordered = filter.OrderBy == FilterConstants.OrderByPrice
-                ? filtered.OrderByDescending(static p => p.PricePerUnit)
-                : filtered.OrderByDescending(static p => p.Name);
-        }
+        var ordered = filtered.OrderBy(propertyName, descending);
 
         return await ordered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
     }
