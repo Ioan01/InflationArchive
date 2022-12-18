@@ -27,7 +27,6 @@ import { useGlobalStore } from '../store/global';
 
             <div v-if="loggedIn === true">
                 <v-btn color="primary">Logout</v-btn>
-                <v-btn color="primary">Account</v-btn>
             </div>
 
 

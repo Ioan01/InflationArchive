@@ -49,11 +49,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: "default",
-        policy  =>
-        {
-            policy.WithOrigins(new []{"http://localhost:8080","http://localhost:5016"});
-        });
+    options.AddDefaultPolicy(policyBuilder =>
+    {
+        policyBuilder.WithOrigins(new []{"http://localhost:8080"});
+    });
+    
 });
 
 
@@ -91,7 +91,7 @@ builder.Services.AddQuartzServer(options =>
     options.WaitForJobsToComplete = true;
     options.AwaitApplicationStarted = true;
 
-    var shouldTriggerJobs = builder.Configuration.GetValue<bool>("QuartzSettings:shouldTriggerJobs");
+    var shouldTriggerJobs = true;//builder.Configuration.GetValue<bool>("QuartzSettings:shouldTriggerJobs");
     if (!shouldTriggerJobs)
     {
         options.StartDelay = TimeSpan.MaxValue;
@@ -115,9 +115,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseCors("default");
+app.UseCors();
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseAuthentication();
 
 app.UseAuthorization();

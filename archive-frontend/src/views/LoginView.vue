@@ -70,6 +70,7 @@ export default defineComponent({
 
                     this.loggedIn = true
                 }
+                this.$router.push("/")
             }).catch(error => {
             })
 
