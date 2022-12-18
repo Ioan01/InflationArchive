@@ -27,7 +27,7 @@ import { useGlobalStore } from '../store/global';
         <div class="d-flex flex-wrap mx-auto">
             <ol class="d-flex flex-wrap">
                 <li v-for="product in products" :key="product.id" class="ma-5">
-                    <v-card class="mt-5" width="344">
+                    <v-card class="mt-5 " width="344">
                         <v-img :src="product.imageUri" width="344" height="200px"></v-img>
 
                         <v-card-title>
@@ -39,6 +39,12 @@ import { useGlobalStore } from '../store/global';
                         <v-row class="justify-center mx-auto pa-3">
                             {{ product.category }}
                         </v-row>
+                        <v-icon v-if="product.isFavorite" color="red" @click="unfavoriteProduct(product.id)">mdi-heart</v-icon>
+    <v-icon v-else color="grey" @click="favoriteProduct(product.id)">mdi-heart-outline</v-icon>
+                        <v-spacer/>
+                        <router-link :to="{ name: 'productView', params: { productId: product.id } }" class="router-link">
+                            <v-btn color="primary">Details</v-btn>
+                        </router-link>
                     </v-card>
                 </li>
             </ol>
@@ -164,8 +170,26 @@ export default defineComponent({
         };
     },
     methods: {
-
-
+        async favoriteProduct(productId: string) {
+        try {
+            await axios.post(address() + '/favorite/addProductToFavorites', {
+            productId
+            });
+            this.fetchProducts();
+        } catch (error) {
+            console.error(error);
+        }
+        },
+        async unfavoriteProduct(productId: string) {
+        try {
+            await axios.delete(
+            address() + '/favorite/removeProductFromFavorites/' + productId
+            );
+            this.fetchProducts();
+        } catch (error) {
+            console.error(error);
+        }
+        }
     },
 });
 </script>
