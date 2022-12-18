@@ -59,7 +59,7 @@
         {
             Order = "";
             OrderBy = "";
-            PageSize = 0;
+            PageSize = 20;
             PageNr = 0;
             Category = "";
             Name = "";

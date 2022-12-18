@@ -14,4 +14,35 @@ public class ScraperContext : DbContext
     public ScraperContext(DbContextOptions<ScraperContext> options) : base(options)
     {
     }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Product>()
+            .HasIndex(static e => new
+            {
+                e.Name,
+                e.CategoryId,
+                e.ManufacturerId,
+                e.StoreId,
+                e.Unit,
+                e.PricePerUnit
+            })
+            .IsUnique();
+
+        modelBuilder.Entity<Store>()
+            .HasIndex(static e => new { e.Name })
+            .IsUnique();
+
+        modelBuilder.Entity<Manufacturer>()
+            .HasIndex(static e => new { e.Name })
+            .IsUnique();
+
+        modelBuilder.Entity<Category>()
+            .HasIndex(static e => new { e.Name })
+            .IsUnique();
+
+        modelBuilder.Entity<ProductPrice>()
+            .HasIndex(static e => new { e.ProductId, e.Date })
+            .IsUnique();
+    }
 }

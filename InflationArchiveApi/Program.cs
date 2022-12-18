@@ -96,6 +96,12 @@ builder.Services.AddQuartzServer(options =>
 {
     options.WaitForJobsToComplete = true;
     options.AwaitApplicationStarted = true;
+
+    var shouldTriggerJobs = builder.Configuration.GetValue<bool>("QuartzSettings:shouldTriggerJobs");
+    if (!shouldTriggerJobs)
+    {
+        options.StartDelay = TimeSpan.MaxValue;
+    }
 });
 
 var app = builder.Build();
