@@ -9,7 +9,7 @@ public sealed class Product : ScraperEntity
     public string Unit { get; set; }
     public bool IsUnreliable { get; set; }
 
-    public ICollection<ProductPrice> ProductPrices;
+    public ICollection<ProductPrice> ProductPrices { get; set; }
 
     public Guid CategoryId { get; set; }
     public Category Category { get; set; }
