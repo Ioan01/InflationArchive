@@ -3,6 +3,7 @@ using InflationArchive.Helpers;
 
 namespace InflationArchive.Models.Products;
 
+[Table("Product")]
 public sealed class Product : ScraperEntity
 {
     public decimal PricePerUnit { get; set; }

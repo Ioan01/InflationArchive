@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using InflationArchive.Contexts;
 using InflationArchive.Models.Account;
 using InflationArchive.Models.Requests;
@@ -9,11 +10,13 @@ namespace InflationArchive.Services;
 public class AccountService
 {
     private UserContext userContext;
+    private ScraperContext scraperContext;
     private PasswordHasher<User> passwordHasher;
 
-    public AccountService(UserContext userContext)
+    public AccountService(UserContext userContext, ScraperContext scraperContext)
     {
         this.userContext = userContext;
+        this.scraperContext = scraperContext;
         passwordHasher = new PasswordHasher<User>();
     }
 
@@ -43,5 +46,41 @@ public class AccountService
         }
 
         return true;
+    }
+
+    public async Task<User?> FindUserById(Guid idGuid)
+    {
+        return await userContext.Users.FirstOrDefaultAsync(u => u.Id == idGuid);
+    }
+
+    
+
+    public Claim? GetUserIdClaim(IEnumerable<Claim> claims)
+    {
+        return claims.FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier);
+    }
+
+    public async Task AddFavoriteProduct(Guid userId, Guid productId)
+    {
+        var fav = await userContext.UserFavorites.FirstOrDefaultAsync(f =>
+            f.UserId == userId && f.ProductId == productId);
+        if (fav is null)
+        {
+            await userContext.UserFavorites.AddAsync(new UserFavorites(userId, productId));
+        }
+
+        await userContext.SaveChangesAsync();
+    }
+
+    public async Task RemoveFavorite(Guid userId, Guid productId)
+    {
+        var fav = await userContext.UserFavorites.FirstOrDefaultAsync(f =>
+            f.UserId == userId && f.ProductId == productId);
+        if (fav is not null)
+        {
+            userContext.UserFavorites.Remove(fav);
+        }
+
+        await userContext.SaveChangesAsync();
     }
 }
