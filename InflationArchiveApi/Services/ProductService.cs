@@ -110,7 +110,7 @@ public class ProductService
 
         var products = FilterProducts(filter).Where(p => favoritedProducts.Contains(p));
 
-        return await products.ToListAsync();
+        return await products.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
     }
 
     public async Task<Product?> GetProduct(Guid id)
