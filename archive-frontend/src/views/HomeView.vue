@@ -16,6 +16,7 @@ import { useGlobalStore } from '../store/global';
             <v-spacer></v-spacer>
             <v-btn color="primary">Price Descending</v-btn>
         </div>
+        <v-text-field @change="fetchProducts()" v-model="name"></v-text-field>
         <div class="d-flex flex-wrap mx-auto">
             <ol class="d-flex flex-wrap">
                 <li v-for="product in products" :key="product.id" class="ma-5">
@@ -25,13 +26,11 @@ import { useGlobalStore } from '../store/global';
                         <v-card-title>
                             {{ product.name }}
                         </v-card-title>
-
+                        {{ product.pricePerUnit }} LEI / {{ product.unit }}
                         <v-card-subtitle>
                         </v-card-subtitle>
                         <v-row class="justify-center mx-auto pa-3">
-                            <v-btn color="primary">
-                                Product details
-                            </v-btn>
+                            {{ product.category }}
                         </v-row>
                     </v-card>
                 </li>
@@ -57,14 +56,14 @@ export default defineComponent({
         const products = ref<ProductModel[]>([]);
         const totalProducts = ref<number>(0)
         const page = ref<number>(0)
+        const name = ref("a")
 
+        fetchProducts()
 
-        fetchProducts(0)
-
-        async function fetchProducts(page: number) {
+        async function fetchProducts() {
             try {
                 const response = await axios.get<QueryResponseModel>(
-                    address() + '/product/getProducts?pagenr=' + page
+                    address() + '/product/getProducts?pagenr=' + page.value + "&name=" + name.value
                 );
                 products.value = response.data.products
                 totalProducts.value = response.data.totalCount
@@ -75,7 +74,8 @@ export default defineComponent({
         }
 
         async function changePage($event: number) {
-            fetchProducts($event)
+            page.value = $event
+            fetchProducts()
         }
 
         return {
@@ -83,7 +83,7 @@ export default defineComponent({
             products,
             totalProducts,
             page,
-            changePage
+            changePage, name, fetchProducts
         };
     },
     methods: {
