@@ -1,6 +1,6 @@
 export const environment = "dev";
 
-export const localhostAddress = "https://localhost:7038";
+export const localhostAddress = "http://localhost:5016";
 export const serverAddress = "";
 
 export const address = () =>
