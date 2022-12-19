@@ -77,8 +77,24 @@ public class ProductService
         await scraperContext.SaveChangesAsync();
     }
 
-    private static IQueryable<Product> FilterHelper(IQueryable<Product> filtered, Filter filter)
+    // NOTE: IQueryable is just an abstraction over something that will be turned into SQL
+    //       by EF Core. It is NOT the result of the query. ToList() will actually return the result of the query.
+
+    // Create filtered products query
+    private static IQueryable<Product> FilterProducts(IQueryable<Product> products, Filter filter)
     {
+        // Load (EF Core Include == SQL JOIN) related data
+        var filtered = products
+            .Include(static p => p.Category)
+            .Include(static p => p.Manufacturer)
+            .Include(static p => p.Store)
+            // Generate filter query based on user input
+            .Where(p =>
+                EF.Functions.ILike(p.Name, $"%{filter.Name}%") &&
+                EF.Functions.ILike(p.Category.Name, $"%{filter.Category}%") &&
+                EF.Functions.ILike(p.Manufacturer.Name, $"%{filter.Manufacturer}%") &&
+                p.PricePerUnit >= filter.MinPrice && p.PricePerUnit <= filter.MaxPrice);
+
         var descending = filter.Order == FilterConstants.Descending;
         var propertyName = filter.OrderBy switch
         {
@@ -87,65 +103,83 @@ public class ProductService
             _ => throw new InvalidEnumArgumentException()
         };
 
+        // Generate order filtered query
         var ordered = filtered.OrderBy(propertyName, descending);
 
         return ordered;
     }
 
-    private static IQueryable<Product> FilterProducts(IEnumerable<Product> products, Filter filter)
-    {
-        var filtered = products.Where(p =>
-            p.Name.Contains(filter.Name, StringComparison.InvariantCultureIgnoreCase) &&
-            p.Category.Name.Contains(filter.Category, StringComparison.InvariantCultureIgnoreCase) &&
-            p.Manufacturer.Name.Contains(filter.Manufacturer, StringComparison.InvariantCultureIgnoreCase) &&
-            p.PricePerUnit >= filter.MinPrice && p.PricePerUnit <= filter.MaxPrice);
-        return FilterHelper(filtered.AsQueryable(), filter);
-    }
-
-    private static IQueryable<Product> FilterProducts(IQueryable<Product> products, Filter filter)
-    {
-        var filtered = products.Where(p =>
-            EF.Functions.ILike(p.Name, $"%{filter.Name}%") &&
-            EF.Functions.ILike(p.Category.Name, $"%{filter.Category}%") &&
-            EF.Functions.ILike(p.Manufacturer.Name, $"%{filter.Manufacturer}%") &&
-            p.PricePerUnit >= filter.MinPrice && p.PricePerUnit <= filter.MaxPrice);
-        return FilterHelper(filtered, filter);
-    }
-
     public async Task<ProductQueryDto> GetProducts(Filter filter, Guid userId)
     {
-        var user = await scraperContext.Users
-            .Include(static u => u.FavoriteProducts)
-            .SingleOrDefaultAsync(u => u.Id == userId);
+        // Get user (with products not loaded!) if logged in
+        var user = await scraperContext.Users.SingleOrDefaultAsync(u => u.Id == userId);
 
-        var products = scraperContext.Products
-            .Include(static p => p.Category)
-            .Include(static p => p.Manufacturer)
-            .Include(static p => p.Store);
+        // Get filtered and ordered products QUERY (not yet executed!)
+        var filtered = FilterProducts(scraperContext.Products, filter);
 
-        var filtered = FilterProducts(products, filter);
+        // Get paginated products QUERY (not yet executed!)
+        var productListQuery = filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize);
 
-        var productList = await filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
+        // Finally, execute products query and get result into memory
+        var productList = await productListQuery.ToListAsync();
+
+        // If user logged in
+        if (user is not null)
+            // Load into user only his favorites that match with queried products
+            // Note the use of productListQuery instead of productList!
+            await scraperContext.Entry(user)
+                .Collection(static u => u.FavoriteProducts)
+                .Query()
+                .Where(fp => productListQuery.Any(pl => pl.Id == fp.Id))
+                .LoadAsync();
 
         return new ProductQueryDto(ProductsToDto(productList, user), filtered.Count());
     }
 
     public async Task<ProductQueryDto> GetFavoriteProducts(Guid userId, Filter filter)
     {
-        var user = await scraperContext.Users
-            .Include(static u => u.FavoriteProducts)
-            .ThenInclude(static p => p.Category)
-            .Include(static u => u.FavoriteProducts)
-            .ThenInclude(static p => p.Manufacturer)
-            .Include(static u => u.FavoriteProducts)
-            .ThenInclude(static p => p.Store)
-            .SingleAsync(u => u.Id == userId);
+        // Get user (with products not loaded!)
+        var user = await scraperContext.Users.SingleAsync(u => u.Id == userId);
 
-        var filtered = FilterProducts(user.FavoriteProducts, filter);
+        // Create query to get user's favorites
+        var products = scraperContext.Entry(user)
+            .Collection(static u => u.FavoriteProducts)
+            .Query();
 
-        var productList = filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize);
+        // Get filtered and ordered favorite products QUERY (not yet executed!)
+        var filtered = FilterProducts(products, filter);
+
+        // Execute paginated, filtered, favorite products query and get result into memory
+        var productList = await filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
 
         return new ProductQueryDto(ProductsToDto(productList, user), filtered.Count());
+    }
+
+    public async Task<ProductDto?> GetProduct(Guid productId, Guid userId)
+    {
+        // Get user (with products not loaded!) if logged in
+        var user = await scraperContext.Users.SingleOrDefaultAsync(u => u.Id == userId);
+
+        // Get product with related data loaded
+        var product = await scraperContext.Products
+            .Include(static p => p.Category)
+            .Include(static p => p.Manufacturer)
+            .Include(static p => p.Store)
+            .Include(static p => p.ProductPrices)
+            .SingleOrDefaultAsync(p => p.Id == productId);
+
+        if (product is null) return null;
+
+        // If user logged in
+        if (user is not null)
+            // Load into user only his favorites that match with queried product
+            await scraperContext.Entry(user)
+                .Collection(static u => u.FavoriteProducts)
+                .Query()
+                .Where(fp => product.Id == fp.Id)
+                .LoadAsync();
+
+        return ProductToDto(product, user);
     }
 
     private static IEnumerable<ProductDto> ProductsToDto(IEnumerable<Product> products, User? user = null)

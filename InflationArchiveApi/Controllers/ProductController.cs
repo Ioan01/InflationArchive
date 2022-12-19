@@ -11,12 +11,10 @@ namespace InflationArchive.Controllers;
 public class ProductController : ControllerBase
 {
     private readonly ProductService _productService;
-    private readonly JoinedService _joinedService;
 
-    public ProductController(ProductService productService, JoinedService joinedService)
+    public ProductController(ProductService productService)
     {
         _productService = productService;
-        _joinedService = joinedService;
     }
 
     [HttpGet]
@@ -24,18 +22,24 @@ public class ProductController : ControllerBase
     {
         var idString = AccountService.GetUserId(HttpContext.User.Claims);
         var userId = idString is null ? Guid.Empty : Guid.Parse(idString);
+
         var response = await _productService.GetProducts(filter, userId);
+
         return Ok(response);
     }
 
     [HttpGet]
-    public async Task<ActionResult<ProductDto>> GetProduct([FromQuery] Guid id)
+    public async Task<ActionResult<ProductDto>> GetProduct([FromQuery] Guid productId)
     {
-        var product = await _joinedService.GetProduct(id);
+        var idString = AccountService.GetUserId(HttpContext.User.Claims);
+        var userId = idString is null ? Guid.Empty : Guid.Parse(idString);
+
+        var product = await _productService.GetProduct(productId, userId);
+
         if (product is null)
             return NotFound();
 
-        return Ok(ProductService.ProductToDto(product));
+        return Ok(product);
     }
 
 

@@ -52,7 +52,6 @@ builder.Services.AddDbContext<ScraperContext>(options =>
 
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<ProductService>();
-builder.Services.AddScoped<JoinedService>();
 builder.Services.AddScoped<HttpClient>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
