@@ -12,12 +12,12 @@ namespace InflationArchive.Controllers;
 public class ProductController : ControllerBase
 {
     private readonly ProductService _productService;
-    private readonly JointService _jointService;
+    private readonly JoinedService _joinedService;
 
-    public ProductController(ProductService productService, JointService jointService)
+    public ProductController(ProductService productService, JoinedService joinedService)
     {
         _productService = productService;
-        _jointService = jointService;
+        _joinedService = joinedService;
     }
 
     [HttpGet]
@@ -30,7 +30,7 @@ public class ProductController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<ProductDto>> GetProduct([FromQuery] Guid id)
     {
-        var product = await _jointService.GetProduct(id);
+        var product = await _joinedService.GetProduct(id);
         if (product is null)
             return NotFound();
 

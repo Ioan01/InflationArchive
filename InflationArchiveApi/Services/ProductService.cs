@@ -10,12 +10,12 @@ namespace InflationArchive.Services;
 public class ProductService
 {
     private ScraperContext scraperContext { get; }
-    private readonly JointService _jointService;
+    private readonly JoinedService _joinedService;
 
-    public ProductService(ScraperContext scraperContext, JointService jointService)
+    public ProductService(ScraperContext scraperContext, JoinedService joinedService)
     {
         this.scraperContext = scraperContext;
-        _jointService = jointService;
+        _joinedService = joinedService;
     }
 
     public async Task<T> GetEntityOrCreate<T>(string name) where T : ScraperEntity, new()

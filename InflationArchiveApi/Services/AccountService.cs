@@ -11,13 +11,13 @@ public class AccountService
 {
     private ScraperContext scraperContext;
     private PasswordHasher<User> passwordHasher;
-    private readonly JointService _jointService;
+    private readonly JoinedService _joinedService;
 
-    public AccountService(ScraperContext scraperContext, ProductService productService, JointService jointService)
+    public AccountService(ScraperContext scraperContext, ProductService productService, JoinedService joinedService)
     {
         this.scraperContext = scraperContext;
         passwordHasher = new PasswordHasher<User>();
-        _jointService = jointService;
+        _joinedService = joinedService;
     }
 
     public async Task RegisterUser(UserRegisterModel model)
@@ -55,12 +55,12 @@ public class AccountService
 
     public async Task<bool> AddFavoriteProduct(Guid userId, Guid productId)
     {
-        var product = await _jointService.GetProduct(productId);
+        var product = await _joinedService.GetProduct(productId);
 
         if (product is null)
             return false;
 
-        var user = await _jointService.GetUserById(userId);
+        var user = await _joinedService.GetUserById(userId);
 
         user.FavoriteProducts.Add(product);
 
@@ -71,12 +71,12 @@ public class AccountService
 
     public async Task<bool> RemoveFavorite(Guid userId, Guid productId)
     {
-        var product = await _jointService.GetProduct(productId);
+        var product = await _joinedService.GetProduct(productId);
 
         if (product is null)
             return false;
 
-        var user = await _jointService.GetUserById(userId);
+        var user = await _joinedService.GetUserById(userId);
 
         user.FavoriteProducts.Remove(product);
 

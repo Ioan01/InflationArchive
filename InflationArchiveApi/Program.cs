@@ -25,7 +25,7 @@ builder.Services.AddDbContext<ScraperContext>(options =>
 
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<ProductService>();
-builder.Services.AddScoped<JointService>();
+builder.Services.AddScoped<JoinedService>();
 builder.Services.AddScoped<HttpClient>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -49,11 +49,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policyBuilder =>
-    {
-        policyBuilder.WithOrigins(new []{"http://localhost:8080"});
-    });
-    
+    options.AddPolicy(name: "default",
+        policy  =>
+        {
+            policy.WithOrigins(new []{"http://localhost:8080","http://localhost:5016"});
+        });
 });
 
 
@@ -115,9 +115,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseCors();
+app.UseCors("default");
 
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 app.UseAuthentication();
 
 app.UseAuthorization();

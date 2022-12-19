@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace InflationArchive.Services;
 
-public class JointService
+public class JoinedService
 {
     private readonly ScraperContext _context;
 
-    public JointService(ScraperContext context)
+    public JoinedService(ScraperContext context)
     {
         _context = context;
     }
