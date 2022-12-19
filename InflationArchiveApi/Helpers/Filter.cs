@@ -1,4 +1,8 @@
-﻿namespace InflationArchive.Helpers
+﻿using System.Linq.Expressions;
+using InflationArchive.Models.Products;
+using Microsoft.EntityFrameworkCore;
+
+namespace InflationArchive.Helpers
 {
     public class Filter
     {
@@ -53,6 +57,28 @@
             set => _maxPrice = value <= 0
                 ? decimal.MaxValue
                 : Convert.ToDecimal(Math.Round(value, 3));
+        }
+
+        public Expression<Func<Product, bool>> Expression
+        {
+            get
+            {
+                return p =>
+                    EF.Functions.ILike(p.Name, $"%{Name}%") &&
+                    EF.Functions.ILike(p.Category.Name, $"%{Category}%") &&
+                    p.PricePerUnit >= MinPrice && p.PricePerUnit <= MaxPrice;
+            }
+        }
+
+        public Func<Product, bool> Predicate
+        {
+            get
+            {
+                return p =>
+                    p.Name.Contains(Name, StringComparison.InvariantCultureIgnoreCase) &&
+                    p.Category.Name.Contains(Category, StringComparison.InvariantCultureIgnoreCase) &&
+                    p.PricePerUnit >= MinPrice && p.PricePerUnit <= MaxPrice;
+            }
         }
 
         public Filter()

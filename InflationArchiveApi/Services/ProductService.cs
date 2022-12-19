@@ -9,13 +9,11 @@ namespace InflationArchive.Services;
 
 public class ProductService
 {
-    private ScraperContext scraperContext { get; }
-    private readonly JoinedService _joinedService;
+    private readonly ScraperContext scraperContext;
 
-    public ProductService(ScraperContext scraperContext, JoinedService joinedService)
+    public ProductService(ScraperContext scraperContext)
     {
         this.scraperContext = scraperContext;
-        _joinedService = joinedService;
     }
 
     public async Task<T> GetEntityOrCreate<T>(string name) where T : ScraperEntity, new()
@@ -78,37 +76,8 @@ public class ProductService
         await scraperContext.SaveChangesAsync();
     }
 
-    private static IEnumerable<Product> FilterProducts(IEnumerable<Product> products, Filter filter)
+    private static IQueryable<Product> FilterHelper(IQueryable<Product> filtered, Filter filter)
     {
-        var filtered = products
-            .Where(p =>
-                p.Name.Contains(filter.Name, StringComparison.InvariantCultureIgnoreCase) &&
-                p.Category.Name.Contains(filter.Category, StringComparison.InvariantCultureIgnoreCase) &&
-                p.PricePerUnit >= filter.MinPrice && p.PricePerUnit <= filter.MaxPrice
-            );
-
-        var descending = filter.Order == FilterConstants.Descending;
-        var propertyName = filter.OrderBy switch
-        {
-            FilterConstants.OrderByPrice => nameof(Product.PricePerUnit),
-            FilterConstants.OrderByName => nameof(Product.Name),
-            _ => throw new InvalidEnumArgumentException()
-        };
-
-        var ordered = filtered.AsQueryable().OrderBy(propertyName, descending);
-
-        return ordered;
-    }
-
-    private static IQueryable<Product> FilterProducts(IQueryable<Product> products, Filter filter)
-    {
-        var filtered = products
-            .Where(p =>
-                EF.Functions.ILike(p.Name, $"%{filter.Name}%") &&
-                EF.Functions.ILike(p.Category.Name, $"%{filter.Category}%") &&
-                p.PricePerUnit >= filter.MinPrice && p.PricePerUnit <= filter.MaxPrice
-            );
-
         var descending = filter.Order == FilterConstants.Descending;
         var propertyName = filter.OrderBy switch
         {
@@ -122,6 +91,18 @@ public class ProductService
         return ordered;
     }
 
+    private static IQueryable<Product> FilterProducts(IEnumerable<Product> products, Filter filter)
+    {
+        var filtered = products.Where(filter.Predicate);
+        return FilterHelper(filtered.AsQueryable(), filter);
+    }
+
+    private static IQueryable<Product> FilterProducts(IQueryable<Product> products, Filter filter)
+    {
+        var filtered = products.Where(filter.Expression);
+        return FilterHelper(filtered, filter);
+    }
+
     public async Task<ProductQueryDto> GetProducts(Filter filter)
     {
         var products = scraperContext.Products
@@ -131,7 +112,7 @@ public class ProductService
 
         var filtered = FilterProducts(products, filter);
 
-        var productList =  await filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
+        var productList = await filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
 
         return new ProductQueryDto(ProductsToDto(productList), filtered.Count());
     }
@@ -148,11 +129,12 @@ public class ProductService
             .SingleAsync(u => u.Id == userId);
 
         var filtered = FilterProducts(user.FavoriteProducts, filter);
+
         var productList = filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize);
 
         return new ProductQueryDto(ProductsToDto(productList), filtered.Count());
     }
-    
+
     private static IEnumerable<ProductDto> ProductsToDto(IEnumerable<Product> products)
     {
         return products.Select(static product => ProductToDto(product));
