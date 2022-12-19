@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using InflationArchive.Helpers;
+using InflationArchive.Models.Account;
 
 namespace InflationArchive.Models.Products;
 
-[Table("Product")]
 public sealed class Product : ScraperEntity
 {
     public decimal PricePerUnit { get; set; }
@@ -26,6 +26,8 @@ public sealed class Product : ScraperEntity
     public Store Store { get; set; }
 
     [NotMapped] internal readonly string StoreName;
+
+    public ICollection<User> FavoritedByUsers { get; set; }
 
     public Product()
     {

@@ -9,32 +9,32 @@ namespace InflationArchive.Services;
 
 public class AccountService
 {
-    private UserContext userContext;
     private ScraperContext scraperContext;
     private PasswordHasher<User> passwordHasher;
+    private readonly JointService _jointService;
 
-    public AccountService(UserContext userContext, ScraperContext scraperContext)
+    public AccountService(ScraperContext scraperContext, ProductService productService, JointService jointService)
     {
-        this.userContext = userContext;
         this.scraperContext = scraperContext;
         passwordHasher = new PasswordHasher<User>();
+        _jointService = jointService;
     }
 
     public async Task RegisterUser(UserRegisterModel model)
     {
-        var user = await userContext.Users.AddAsync(new User()
+        var user = await scraperContext.Users.AddAsync(new User()
         {
             Email = model.Email,
             UserName = model.Username,
         });
         user.Entity.PasswordHash = passwordHasher.HashPassword(user.Entity, model.Password);
 
-        await userContext.SaveChangesAsync();
+        await scraperContext.SaveChangesAsync();
     }
 
     public async Task<User?> FindUserByUsernameOrEmail(string usernameOrEmail)
     {
-        return await userContext.Users.SingleOrDefaultAsync(user =>
+        return await scraperContext.Users.SingleOrDefaultAsync(user =>
             user.Email == usernameOrEmail || user.UserName == usernameOrEmail);
     }
 
@@ -48,39 +48,40 @@ public class AccountService
         return true;
     }
 
-    public async Task<User?> FindUserById(Guid idGuid)
+    public static Claim? GetUserIdClaim(IEnumerable<Claim> claims)
     {
-        return await userContext.Users.FirstOrDefaultAsync(u => u.Id == idGuid);
+        return claims.FirstOrDefault(static claim => claim.Type == ClaimTypes.NameIdentifier);
     }
 
-    
-
-    public Claim? GetUserIdClaim(IEnumerable<Claim> claims)
+    public async Task<bool> AddFavoriteProduct(Guid userId, Guid productId)
     {
-        return claims.FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier);
+        var product = await _jointService.GetProduct(productId);
+
+        if (product is null)
+            return false;
+
+        var user = await _jointService.GetUserById(userId);
+
+        user.FavoriteProducts.Add(product);
+
+        await scraperContext.SaveChangesAsync();
+
+        return true;
     }
 
-    public async Task AddFavoriteProduct(Guid userId, Guid productId)
+    public async Task<bool> RemoveFavorite(Guid userId, Guid productId)
     {
-        var fav = await userContext.UserFavorites.FirstOrDefaultAsync(f =>
-            f.UserId == userId && f.ProductId == productId);
-        if (fav is null)
-        {
-            await userContext.UserFavorites.AddAsync(new UserFavorites(userId, productId));
-        }
+        var product = await _jointService.GetProduct(productId);
 
-        await userContext.SaveChangesAsync();
-    }
+        if (product is null)
+            return false;
 
-    public async Task RemoveFavorite(Guid userId, Guid productId)
-    {
-        var fav = await userContext.UserFavorites.FirstOrDefaultAsync(f =>
-            f.UserId == userId && f.ProductId == productId);
-        if (fav is not null)
-        {
-            userContext.UserFavorites.Remove(fav);
-        }
+        var user = await _jointService.GetUserById(userId);
 
-        await userContext.SaveChangesAsync();
+        user.FavoriteProducts.Remove(product);
+
+        await scraperContext.SaveChangesAsync();
+
+        return true;
     }
 }

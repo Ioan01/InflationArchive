@@ -1,11 +1,6 @@
-using System.Security.Claims;
-using InflationArchive.Helpers;
-using InflationArchive.Models.Products;
 using InflationArchive.Models.Requests;
 using InflationArchive.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace InflationArchive.Controllers;
 [ApiController]
@@ -14,15 +9,12 @@ namespace InflationArchive.Controllers;
 public class AccountController : ControllerBase
 {
     private AccountService accountService;
-    private ProductService productService;
 
-    public AccountController(AccountService accountService, ProductService productService)
+    public AccountController(AccountService accountService)
     {
         this.accountService = accountService;
-        this.productService = productService;
     }
-    
-    
+
     [HttpPost]
     public async Task<ActionResult> Register([FromForm]UserRegisterModel user)
     {
@@ -35,7 +27,7 @@ public class AccountController : ControllerBase
         {
             return BadRequest();
         }
-        
+
         try
         {
             await accountService.RegisterUser(user);
@@ -47,50 +39,40 @@ public class AccountController : ControllerBase
         }
     }
 
+    // TODO: [Authorize]
     [HttpPost]
-    [Authorize]
-    public async Task<IActionResult> AddFavorite([FromForm]Guid product )
+    public async Task<IActionResult> AddFavorite([FromForm] Guid productId)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest();
         }
 
-        var userIdClaim = accountService.GetUserIdClaim(HttpContext.User.Claims);
-        
-        if (userIdClaim is null)
-            return Unauthorized();
-        
-        var _product = await productService.GetProduct(product);
-        if (_product is null)
-            return NotFound();
+        // TODO: Get from token
+        var userId = new Guid("039772cb-29c3-47ec-a46a-172e4b531d12");
 
-        await accountService.AddFavoriteProduct(Guid.Parse(userIdClaim.Value), _product.Id);
-        
-        return Ok();
+        var ok = await accountService.AddFavoriteProduct(userId, productId);
+
+        if (ok)
+            return Ok();
+
+        return NotFound();
     }
 
     [HttpPost]
-    [Authorize]
-    public async Task<IActionResult> RemoveFavorite([FromForm] Guid product)
+    public async Task<IActionResult> RemoveFavorite([FromForm] Guid productId)
     {
         if (!ModelState.IsValid)
             return BadRequest();
-        
 
-        var userIdClaim = accountService.GetUserIdClaim(HttpContext.User.Claims);
-        
-        if (userIdClaim is null)
-            return Unauthorized();
-        
-        var _product = await productService.GetProduct(product);
-        if (_product is null)
-            return NotFound();
+        // TODO: Get from token
+        var userId = new Guid("039772cb-29c3-47ec-a46a-172e4b531d12");
 
-        await accountService.RemoveFavorite(Guid.Parse(userIdClaim.Value), _product.Id);
+        var ok = await accountService.RemoveFavorite(userId, productId);
 
-        return Ok();
+        if (ok)
+            return Ok();
+
+        return NotFound();
     }
-
-    
 }

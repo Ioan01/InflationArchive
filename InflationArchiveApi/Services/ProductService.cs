@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using InflationArchive.Contexts;
 using InflationArchive.Helpers;
-using InflationArchive.Models.Account;
 using InflationArchive.Models.Products;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,12 +9,12 @@ namespace InflationArchive.Services;
 public class ProductService
 {
     private ScraperContext scraperContext { get; }
-    private UserContext userContext;
+    private readonly JointService _jointService;
 
-    public ProductService(ScraperContext scraperContext, UserContext userContext)
+    public ProductService(ScraperContext scraperContext, JointService jointService)
     {
         this.scraperContext = scraperContext;
-        this.userContext = userContext;
+        _jointService = jointService;
     }
 
     public async Task<T> GetEntityOrCreate<T>(string name) where T : ScraperEntity, new()
@@ -32,6 +31,12 @@ public class ProductService
 
     public async Task AddPriceNode(Product product, DateTime dateTime)
     {
+        var node = await scraperContext.ProductPrices
+            .SingleOrDefaultAsync(n => n.ProductId == product.Id && n.Date == dateTime);
+
+        if (node is not null)
+            return;
+
         await scraperContext.ProductPrices.AddAsync(new ProductPrice
         {
             Price = product.PricePerUnit,
@@ -72,12 +77,31 @@ public class ProductService
         await scraperContext.SaveChangesAsync();
     }
 
-    private IQueryable<Product> FilterProducts(Filter filter)
+    private static IEnumerable<Product> FilterProducts(IEnumerable<Product> products, Filter filter)
     {
-        var filtered = scraperContext.Products
-            .Include(static p => p.Category)
-            .Include(static p => p.Manufacturer)
-            .Include(static p => p.Store)
+        var filtered = products
+            .Where(p =>
+                p.Name.Contains(filter.Name, StringComparison.InvariantCultureIgnoreCase) &&
+                p.Category.Name.Contains(filter.Category, StringComparison.InvariantCultureIgnoreCase) &&
+                p.PricePerUnit >= filter.MinPrice && p.PricePerUnit <= filter.MaxPrice
+            );
+
+        var descending = filter.Order == FilterConstants.Descending;
+        var propertyName = filter.OrderBy switch
+        {
+            FilterConstants.OrderByPrice => nameof(Product.PricePerUnit),
+            FilterConstants.OrderByName => nameof(Product.Name),
+            _ => throw new InvalidEnumArgumentException()
+        };
+
+        var ordered = filtered.AsQueryable().OrderBy(propertyName, descending);
+
+        return ordered;
+    }
+
+    private static IQueryable<Product> FilterProducts(IQueryable<Product> products, Filter filter)
+    {
+        var filtered = products
             .Where(p =>
                 EF.Functions.ILike(p.Name, $"%{filter.Name}%") &&
                 EF.Functions.ILike(p.Category.Name, $"%{filter.Category}%") &&
@@ -96,30 +120,32 @@ public class ProductService
 
         return ordered;
     }
-    
+
     public async Task<IEnumerable<Product>> GetProducts(Filter filter)
     {
-        var queried = FilterProducts(filter);
-
-        return await queried.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
-    }
-
-    public async Task<IEnumerable<Product>> GetFavoriteProducts(Guid userGuid,Filter filter)
-    {
-        var favoritedProducts = await userContext.UserFavorites.Select(u => u.Product).ToListAsync();
-
-        var products = FilterProducts(filter).Where(p => favoritedProducts.Contains(p));
-
-        return await products.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
-    }
-
-    public async Task<Product?> GetProduct(Guid id)
-    {
-        return await scraperContext.Products
+        var products = scraperContext.Products
             .Include(static p => p.Category)
             .Include(static p => p.Manufacturer)
-            .Include(static p => p.Store)
-            .Include(static p => p.ProductPrices)
-            .SingleOrDefaultAsync(p => p.Id == id);
+            .Include(static p => p.Store);
+
+        var filtered = FilterProducts(products, filter);
+
+        return await filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
+    }
+
+    public async Task<IEnumerable<Product>> GetFavoriteProducts(Guid userId, Filter filter)
+    {
+        var user = await scraperContext.Users
+            .Include(static u => u.FavoriteProducts)
+            .ThenInclude(static p => p.Category)
+            .Include(static u => u.FavoriteProducts)
+            .ThenInclude(static p => p.Manufacturer)
+            .Include(static u => u.FavoriteProducts)
+            .ThenInclude(static p => p.Store)
+            .SingleAsync(u => u.Id == userId);
+
+        var filtered = FilterProducts(user.FavoriteProducts, filter);
+
+        return filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize);
     }
 }

@@ -17,13 +17,6 @@ builder.Services.AddSwaggerGen();
 
 
 
-var connectionStringUsers = builder.Configuration.GetValue<string>("ConnectionStrings:userContext");
-builder.Services.AddDbContext<UserContext>(options=>
-{
-    options.UseNpgsql(connectionStringUsers);
-});
-
-
 var connectionStringScraper = builder.Configuration.GetValue<string>("ConnectionStrings:scraperContext");
 builder.Services.AddDbContext<ScraperContext>(options =>
 {
@@ -32,6 +25,7 @@ builder.Services.AddDbContext<ScraperContext>(options =>
 
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<JointService>();
 builder.Services.AddScoped<HttpClient>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -111,9 +105,8 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var scraperContext = services.GetRequiredService<ScraperContext>();
-    var userContext = services.GetRequiredService<UserContext>();
 
-    await ContextsInitializer.Initialize(userContext, scraperContext);
+    await ContextsInitializer.Initialize(scraperContext);
 }
 
 // Configure the HTTP request pipeline.

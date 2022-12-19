@@ -1,10 +1,9 @@
+using InflationArchive.Models.Products;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace InflationArchive.Models.Account;
 
-[Index(nameof(UserName), nameof(Email), IsUnique = true)]
 public class User : IdentityUser<Guid>
 {
-    
+    public ICollection<Product> FavoriteProducts { get; set; }
 }

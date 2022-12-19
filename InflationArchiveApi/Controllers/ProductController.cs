@@ -2,7 +2,6 @@
 using InflationArchive.Models.Products;
 using InflationArchive.Models.Requests;
 using InflationArchive.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InflationArchive.Controllers;
@@ -12,12 +11,12 @@ namespace InflationArchive.Controllers;
 public class ProductController : ControllerBase
 {
     private readonly ProductService _productService;
-    private AccountService _accountService;
+    private readonly JointService _jointService;
 
-    public ProductController(ProductService productService, AccountService accountService)
+    public ProductController(ProductService productService, JointService jointService)
     {
         _productService = productService;
-        this._accountService = accountService;
+        _jointService = jointService;
     }
 
     [HttpGet]
@@ -30,7 +29,7 @@ public class ProductController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<ProductDto>> GetProduct([FromQuery] Guid id)
     {
-        var product = await _productService.GetProduct(id);
+        var product = await _jointService.GetProduct(id);
         if (product is null)
             return NotFound();
 
@@ -61,21 +60,18 @@ public class ProductController : ControllerBase
             Store = product.Store.Name,
         };
     }
-    
+
+    // TODO: [Authorize]
     [HttpGet]
-    [Authorize]
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetFavorites([FromQuery] Filter filter)
     {
         if (!ModelState.IsValid)
             return BadRequest();
-        
 
-        var userIdClaim = _accountService.GetUserIdClaim(HttpContext.User.Claims);
-        
-        if (userIdClaim is null)
-            return Unauthorized();
+        // TODO: Get from token
+        var userId = new Guid("039772cb-29c3-47ec-a46a-172e4b531d12");
 
-        var products = await _productService.GetFavoriteProducts(Guid.Parse(userIdClaim.Value), filter);
+        var products = await _productService.GetFavoriteProducts(userId, filter);
 
         return Ok(ProductsToDto(products));
     }
