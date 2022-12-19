@@ -27,6 +27,7 @@ public class JoinedService
             .Include(static p => p.Category)
             .Include(static p => p.Manufacturer)
             .Include(static p => p.Store)
+            .Include(static p => p.ProductPrices)
             .SingleOrDefaultAsync(p => p.Id == id);
     }
 }

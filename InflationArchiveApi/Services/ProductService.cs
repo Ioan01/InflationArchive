@@ -97,6 +97,7 @@ public class ProductService
         var filtered = products.Where(p =>
             p.Name.Contains(filter.Name, StringComparison.InvariantCultureIgnoreCase) &&
             p.Category.Name.Contains(filter.Category, StringComparison.InvariantCultureIgnoreCase) &&
+            p.Manufacturer.Name.Contains(filter.Manufacturer, StringComparison.InvariantCultureIgnoreCase) &&
             p.PricePerUnit >= filter.MinPrice && p.PricePerUnit <= filter.MaxPrice);
         return FilterHelper(filtered.AsQueryable(), filter);
     }
@@ -106,6 +107,7 @@ public class ProductService
         var filtered = products.Where(p =>
             EF.Functions.ILike(p.Name, $"%{filter.Name}%") &&
             EF.Functions.ILike(p.Category.Name, $"%{filter.Category}%") &&
+            EF.Functions.ILike(p.Manufacturer.Name, $"%{filter.Manufacturer}%") &&
             p.PricePerUnit >= filter.MinPrice && p.PricePerUnit <= filter.MaxPrice);
         return FilterHelper(filtered, filter);
     }

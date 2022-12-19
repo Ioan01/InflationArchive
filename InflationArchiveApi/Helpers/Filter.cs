@@ -15,6 +15,7 @@ public class Filter
         OrderBy = "";
         PageSize = 20;
         PageNr = 0;
+        Manufacturer = "";
         Category = "";
         Name = "";
         MinPrice = 0;
@@ -48,6 +49,8 @@ public class Filter
         get => _pageNr;
         set => _pageNr = Math.Max(0, value);
     }
+
+    public string Manufacturer { get; set; }
 
     public string Category { get; set; }
 
