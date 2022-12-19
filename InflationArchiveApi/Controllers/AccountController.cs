@@ -1,5 +1,6 @@
 using InflationArchive.Models.Requests;
 using InflationArchive.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InflationArchive.Controllers;
@@ -8,7 +9,7 @@ namespace InflationArchive.Controllers;
 
 public class AccountController : ControllerBase
 {
-    private AccountService accountService;
+    private readonly AccountService accountService;
 
     public AccountController(AccountService accountService)
     {
@@ -39,7 +40,7 @@ public class AccountController : ControllerBase
         }
     }
 
-    // TODO: [Authorize]
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> AddFavorite([FromForm] Guid productId)
     {
@@ -48,8 +49,7 @@ public class AccountController : ControllerBase
             return BadRequest();
         }
 
-        // TODO: Get from token
-        var userId = new Guid("039772cb-29c3-47ec-a46a-172e4b531d12");
+        var userId = Guid.Parse(AccountService.GetUserId(HttpContext.User.Claims)!);
 
         var ok = await accountService.AddFavoriteProduct(userId, productId);
 
@@ -59,14 +59,14 @@ public class AccountController : ControllerBase
         return NotFound();
     }
 
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> RemoveFavorite([FromForm] Guid productId)
     {
         if (!ModelState.IsValid)
             return BadRequest();
 
-        // TODO: Get from token
-        var userId = new Guid("039772cb-29c3-47ec-a46a-172e4b531d12");
+        var userId = Guid.Parse(AccountService.GetUserId(HttpContext.User.Claims)!);
 
         var ok = await accountService.RemoveFavorite(userId, productId);
 

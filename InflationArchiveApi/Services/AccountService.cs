@@ -48,9 +48,9 @@ public class AccountService
         return true;
     }
 
-    public static Claim? GetUserIdClaim(IEnumerable<Claim> claims)
+    public static string? GetUserId(IEnumerable<Claim> claims)
     {
-        return claims.FirstOrDefault(static claim => claim.Type == ClaimTypes.NameIdentifier);
+        return claims.FirstOrDefault(static claim => claim.Type == ClaimTypes.NameIdentifier)?.Value;
     }
 
     public async Task<bool> AddFavoriteProduct(Guid userId, Guid productId)

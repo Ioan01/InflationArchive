@@ -13,9 +13,9 @@ namespace InflationArchive.Controllers;
 [Route("[controller]/[action]")]
 public class TokenController : ControllerBase
 {
-    private AccountService accountService;
-    private JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
-    private IConfiguration configuration;
+    private readonly AccountService accountService;
+    private readonly JwtSecurityTokenHandler tokenHandler = new();
+    private readonly IConfiguration configuration;
 
     private readonly SecurityKey key;
 

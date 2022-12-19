@@ -2,6 +2,7 @@ using System.ComponentModel;
 using InflationArchive.Contexts;
 using InflationArchive.Helpers;
 using InflationArchive.Models.Products;
+using InflationArchive.Models.Requests;
 using Microsoft.EntityFrameworkCore;
 
 namespace InflationArchive.Services;
@@ -121,7 +122,7 @@ public class ProductService
         return ordered;
     }
 
-    public async Task<IEnumerable<Product>> GetProducts(Filter filter)
+    public async Task<ProductQueryDto> GetProducts(Filter filter)
     {
         var products = scraperContext.Products
             .Include(static p => p.Category)
@@ -130,10 +131,12 @@ public class ProductService
 
         var filtered = FilterProducts(products, filter);
 
-        return await filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
+        var productList =  await filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
+
+        return new ProductQueryDto(ProductsToDto(productList), filtered.Count());
     }
 
-    public async Task<IEnumerable<Product>> GetFavoriteProducts(Guid userId, Filter filter)
+    public async Task<ProductQueryDto> GetFavoriteProducts(Guid userId, Filter filter)
     {
         var user = await scraperContext.Users
             .Include(static u => u.FavoriteProducts)
@@ -145,7 +148,33 @@ public class ProductService
             .SingleAsync(u => u.Id == userId);
 
         var filtered = FilterProducts(user.FavoriteProducts, filter);
+        var productList = filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize);
 
-        return filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize);
+        return new ProductQueryDto(ProductsToDto(productList), filtered.Count());
+    }
+    
+    private static IEnumerable<ProductDto> ProductsToDto(IEnumerable<Product> products)
+    {
+        return products.Select(static product => ProductToDto(product));
+    }
+
+    public static ProductDto ProductToDto(Product product)
+    {
+        return new ProductDto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            ImageUri = product.ImageUri,
+            PricePerUnit = product.PricePerUnit,
+            Unit = product.Unit,
+            ProductPrices = product.ProductPrices?.Select(static entry => new ProductPriceDto
+            {
+                Price = entry.Price,
+                Date = entry.Date
+            })?.ToList()!,
+            Category = product.Category.Name,
+            Manufacturer = product.Manufacturer.Name,
+            Store = product.Store.Name,
+        };
     }
 }

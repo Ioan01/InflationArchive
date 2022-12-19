@@ -2,6 +2,7 @@
 using InflationArchive.Models.Products;
 using InflationArchive.Models.Requests;
 using InflationArchive.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InflationArchive.Controllers;
@@ -22,8 +23,8 @@ public class ProductController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts([FromQuery] Filter filter)
     {
-        var products = await _productService.GetProducts(filter);
-        return Ok(ProductsToDto(products));
+        var response = await _productService.GetProducts(filter);
+        return Ok(response);
     }
 
     [HttpGet]
@@ -33,46 +34,22 @@ public class ProductController : ControllerBase
         if (product is null)
             return NotFound();
 
-        return Ok(ProductToDto(product));
+        return Ok(ProductService.ProductToDto(product));
     }
 
-    private static IEnumerable<ProductDto> ProductsToDto(IEnumerable<Product> products)
-    {
-        return products.Select(static product => ProductToDto(product));
-    }
+    
 
-    private static ProductDto ProductToDto(Product product)
-    {
-        return new ProductDto
-        {
-            Id = product.Id,
-            Name = product.Name,
-            ImageUri = product.ImageUri,
-            PricePerUnit = product.PricePerUnit,
-            Unit = product.Unit,
-            ProductPrices = product.ProductPrices?.Select(static entry => new ProductPriceDto
-            {
-                Price = entry.Price,
-                Date = entry.Date
-            })?.ToList()!,
-            Category = product.Category.Name,
-            Manufacturer = product.Manufacturer.Name,
-            Store = product.Store.Name,
-        };
-    }
-
-    // TODO: [Authorize]
+    [Authorize]
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductDto>>> GetFavorites([FromQuery] Filter filter)
+    public async Task<ActionResult<ProductQueryDto>> GetFavorites([FromQuery] Filter filter)
     {
         if (!ModelState.IsValid)
             return BadRequest();
 
-        // TODO: Get from token
-        var userId = new Guid("039772cb-29c3-47ec-a46a-172e4b531d12");
+        var userId = Guid.Parse(AccountService.GetUserId(HttpContext.User.Claims)!);
 
-        var products = await _productService.GetFavoriteProducts(userId, filter);
+        var response = await _productService.GetFavoriteProducts(userId, filter);
 
-        return Ok(ProductsToDto(products));
+        return Ok(response);
     }
 }

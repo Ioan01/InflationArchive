@@ -4,12 +4,10 @@ namespace InflationArchive.Helpers;
 
 public class QuantityAndUnit
 {
-    private static readonly Regex quantityRegex = new Regex
-        ("[0-9]+[.,]?[0-9]*", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    private static readonly Regex quantityAndUnitRegex = new Regex
-        ("([0-9]+[.,]?[0-9]* *)(([mk]?[gl])|bucati)", RegexOptions.Multiline | RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex quantityRegex = new("[0-9]+[.,]?[0-9]*", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex quantityAndUnitRegex = new("([0-9]+[.,]?[0-9]* *)(([mk]?[gl])|bucati)", RegexOptions.Multiline | RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    private static readonly Regex multiplicationRegex = new Regex(
+    private static readonly Regex multiplicationRegex = new(
         "([0-9]+[.,]?[0-9]?) *[gl]?x *(([0-9]+[.,]?[0-9]* *))",
         RegexOptions.Multiline | RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
