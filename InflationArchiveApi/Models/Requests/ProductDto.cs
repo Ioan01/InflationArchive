@@ -13,4 +13,5 @@ public class ProductDto
     public string Category { get; set; }
     public string Manufacturer { get; set; }
     public string Store { get; set; }
+    public bool IsFavoritedByCurrentUser { get; set; }
 }

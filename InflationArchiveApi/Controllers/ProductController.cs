@@ -1,5 +1,4 @@
 ﻿using InflationArchive.Helpers;
-using InflationArchive.Models.Products;
 using InflationArchive.Models.Requests;
 using InflationArchive.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -23,7 +22,9 @@ public class ProductController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts([FromQuery] Filter filter)
     {
-        var response = await _productService.GetProducts(filter);
+        var idString = AccountService.GetUserId(HttpContext.User.Claims);
+        var userId = idString is null ? Guid.Empty : Guid.Parse(idString);
+        var response = await _productService.GetProducts(filter, userId);
         return Ok(response);
     }
 
@@ -37,7 +38,7 @@ public class ProductController : ControllerBase
         return Ok(ProductService.ProductToDto(product));
     }
 
-    
+
 
     [Authorize]
     [HttpGet]

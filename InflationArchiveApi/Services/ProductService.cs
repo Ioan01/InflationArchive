@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using InflationArchive.Contexts;
 using InflationArchive.Helpers;
+using InflationArchive.Models.Account;
 using InflationArchive.Models.Products;
 using InflationArchive.Models.Requests;
 using Microsoft.EntityFrameworkCore;
@@ -93,18 +94,28 @@ public class ProductService
 
     private static IQueryable<Product> FilterProducts(IEnumerable<Product> products, Filter filter)
     {
-        var filtered = products.Where(filter.Predicate);
+        var filtered = products.Where(p =>
+            p.Name.Contains(filter.Name, StringComparison.InvariantCultureIgnoreCase) &&
+            p.Category.Name.Contains(filter.Category, StringComparison.InvariantCultureIgnoreCase) &&
+            p.PricePerUnit >= filter.MinPrice && p.PricePerUnit <= filter.MaxPrice);
         return FilterHelper(filtered.AsQueryable(), filter);
     }
 
     private static IQueryable<Product> FilterProducts(IQueryable<Product> products, Filter filter)
     {
-        var filtered = products.Where(filter.Expression);
+        var filtered = products.Where(p =>
+            EF.Functions.ILike(p.Name, $"%{filter.Name}%") &&
+            EF.Functions.ILike(p.Category.Name, $"%{filter.Category}%") &&
+            p.PricePerUnit >= filter.MinPrice && p.PricePerUnit <= filter.MaxPrice);
         return FilterHelper(filtered, filter);
     }
 
-    public async Task<ProductQueryDto> GetProducts(Filter filter)
+    public async Task<ProductQueryDto> GetProducts(Filter filter, Guid userId)
     {
+        var user = await scraperContext.Users
+            .Include(static u => u.FavoriteProducts)
+            .SingleOrDefaultAsync(u => u.Id == userId);
+
         var products = scraperContext.Products
             .Include(static p => p.Category)
             .Include(static p => p.Manufacturer)
@@ -114,7 +125,7 @@ public class ProductService
 
         var productList = await filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize).ToListAsync();
 
-        return new ProductQueryDto(ProductsToDto(productList), filtered.Count());
+        return new ProductQueryDto(ProductsToDto(productList, user), filtered.Count());
     }
 
     public async Task<ProductQueryDto> GetFavoriteProducts(Guid userId, Filter filter)
@@ -132,15 +143,15 @@ public class ProductService
 
         var productList = filtered.Skip(filter.PageNr * filter.PageSize).Take(filter.PageSize);
 
-        return new ProductQueryDto(ProductsToDto(productList), filtered.Count());
+        return new ProductQueryDto(ProductsToDto(productList, user), filtered.Count());
     }
 
-    private static IEnumerable<ProductDto> ProductsToDto(IEnumerable<Product> products)
+    private static IEnumerable<ProductDto> ProductsToDto(IEnumerable<Product> products, User? user = null)
     {
-        return products.Select(static product => ProductToDto(product));
+        return products.Select(product => ProductToDto(product, user));
     }
 
-    public static ProductDto ProductToDto(Product product)
+    public static ProductDto ProductToDto(Product product, User? user = null)
     {
         return new ProductDto
         {
@@ -157,6 +168,7 @@ public class ProductService
             Category = product.Category.Name,
             Manufacturer = product.Manufacturer.Name,
             Store = product.Store.Name,
+            IsFavoritedByCurrentUser = user?.FavoriteProducts.Any(p => p.Id == product.Id) ?? false
         };
     }
 }
