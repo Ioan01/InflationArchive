@@ -17,110 +17,79 @@ import { useGlobalStore } from '../store/global';
             <v-btn color="primary">Price Descending</v-btn>
         </div>
         <div class="d-flex flex-wrap mx-auto">
-            <li v-for="product in products" :key="product.id">
-                <v-card class="mt-5" max-width="344">
-                    <v-img src={{ product.imageUri }} height="200px"></v-img>
+            <ol class="d-flex flex-wrap">
+                <li v-for="product in products" :key="product.id" class="ma-5">
+                    <v-card class="mt-5" max-width="344">
+                        <v-img :src="product.imageUri" height="200px"></v-img>
 
-                    <v-card-title>
-                        {{ product.name}}
-                    </v-card-title>
+                        <v-card-title>
+                            {{ product.name }}
+                        </v-card-title>
 
-                    <v-card-subtitle>
-                        Do we really need this buddy?
-                    </v-card-subtitle>
-                    <v-row class="justify-center mx-auto pa-3">
-                        <v-btn
-                            color="primary" >
-                            Product details
-                        </v-btn>
-                    </v-row>
-                </v-card>
-            </li>
-            
-        <v-card class=" ml-5 mt-5" max-width="344">
-            <v-img src="https://cdn.vuetifyjs.com/images/cards/sunshine.jpg" height="200px"></v-img>
-
-            <v-card-title>
-                Product name lalala
-            </v-card-title>
-
-            <v-card-subtitle>
-                Do we really need this buddy?
-            </v-card-subtitle>
-            <v-row class="justify-center mx-auto pa-3">
-                <v-btn
-                    color="primary" >
-                    Product details
-                </v-btn>
-            </v-row>
-        </v-card>
-        <v-card class="ml-5 mt-5" max-width="344">
-            <v-img src="https://cdn.vuetifyjs.com/images/cards/sunshine.jpg" height="200px"></v-img>
-
-            <v-card-title>
-                Product name lalala
-            </v-card-title>
-
-            <v-card-subtitle>
-                Do we really need this buddy?
-            </v-card-subtitle>
-            <v-row class="justify-center mx-auto pa-3">
-                <v-btn
-                    color="primary" style="margin-bottom: 20px">
-                    Product details
-                </v-btn>
-            </v-row>
-        </v-card>
-        <v-card class="ml-5 mt-5" max-width="344">
-            <v-img src="https://cdn.vuetifyjs.com/images/cards/sunshine.jpg" height="200px"></v-img>
-
-            <v-card-title>
-                Product name lalala
-            </v-card-title>
-
-            <v-card-subtitle>
-                Do we really need this buddy?
-            </v-card-subtitle>
-            <v-row class="justify-center mx-auto pa-3">
-                <v-btn
-                    color="primary" >
-                    Product details
-                </v-btn>
-            </v-row>
-        </v-card>
+                        <v-card-subtitle>
+                        </v-card-subtitle>
+                        <v-row class="justify-center mx-auto pa-3">
+                            <v-btn color="primary">
+                                Product details
+                            </v-btn>
+                        </v-row>
+                    </v-card>
+                </li>
+            </ol>
+            <v-pagination v-model="page" :length="totalProducts / 20" @input="changePage($event)"></v-pagination>
         </div>
-        
+
     </div>
 </template>
 <script lang="ts">import { useGlobalStore } from '@/store/global';
-import { ProductModel } from '@/models/ProductModel';
+import { QueryResponseModel } from '@/models/QueryResponseModel';
 import axios from 'axios';
-import { defineComponent, ref} from 'vue';
+import { defineComponent, ref } from 'vue';
 import { address } from '@/store/environment';
+import { ProductModel } from '@/models/ProductModel';
 
 export default defineComponent({
-  setup() {
-    const { loggedIn } = useGlobalStore();
-    const products = ref<ProductModel[]>([]);
 
-    async function fetchProducts() {
-      try {
-        const response = await axios.get<ProductModel[]>(
-          address() + '/product/getProducts'
-        );
-        products.value = response.data;
-      } catch (error) {
-        console.error(error);
-      }
-    }
 
-    fetchProducts();
 
-    return {
-      loggedIn,
-      products,
-    };
-  },
+    setup() {
+        const { loggedIn } = useGlobalStore();
+        const products = ref<ProductModel[]>([]);
+        const totalProducts = ref<number>(0)
+        const page = ref<number>(0)
+
+
+        fetchProducts(0)
+
+        async function fetchProducts(page: number) {
+            try {
+                const response = await axios.get<QueryResponseModel>(
+                    address() + '/product/getProducts?pagenr=' + page
+                );
+                products.value = response.data.products
+                totalProducts.value = response.data.totalCount
+
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function changePage($event: number) {
+            fetchProducts($event)
+        }
+
+        return {
+            loggedIn,
+            products,
+            totalProducts,
+            page,
+            changePage
+        };
+    },
+    methods: {
+
+
+    },
 });
 </script>
 <style lang="">

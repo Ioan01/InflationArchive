@@ -1,6 +1,6 @@
 import LoginViewVue from "@/views/LoginView.vue";
 import RegisterViewVue from "@/views/RegisterView.vue";
-import ProductsViewVue from "@/views/ProductsView.vue"
+import ProductsViewVue from "@/views/ProductsView.vue";
 
 import Vue from "vue";
 import VueRouter from "vue-router";
@@ -25,11 +25,7 @@ const routes = [
     name: "login",
     component: LoginViewVue,
   },
-  {
-    path: "/products",
-    name: "products",
-    component: ProductsViewVue,
-  },
+
   // {
   //   path: '/about',
   //   name: 'about',
