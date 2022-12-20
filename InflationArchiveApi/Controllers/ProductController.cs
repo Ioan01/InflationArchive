@@ -21,7 +21,7 @@ public class ProductController : ControllerBase
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts([FromQuery] Filter filter)
     {
         var idString = AccountService.GetUserId(HttpContext.User.Claims);
-        var userId = idString is null ? Guid.Empty : Guid.Parse(idString);
+        Guid? userId = idString is null ? null : Guid.Parse(idString);
 
         var response = await _productService.GetProducts(filter, userId);
 
@@ -32,7 +32,7 @@ public class ProductController : ControllerBase
     public async Task<ActionResult<ProductDto>> GetProduct([FromQuery] Guid productId)
     {
         var idString = AccountService.GetUserId(HttpContext.User.Claims);
-        var userId = idString is null ? Guid.Empty : Guid.Parse(idString);
+        Guid? userId = idString is null ? null : Guid.Parse(idString);
 
         var product = await _productService.GetProduct(productId, userId);
 
@@ -41,8 +41,6 @@ public class ProductController : ControllerBase
 
         return Ok(product);
     }
-
-
 
     [Authorize]
     [HttpGet]

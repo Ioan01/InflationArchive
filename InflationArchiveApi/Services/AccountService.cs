@@ -62,10 +62,6 @@ public class AccountService
     public async Task<Product?> GetLazyProduct(Guid productId)
     {
         return await scraperContext.Products
-            .Include(static p => p.Category)
-            .Include(static p => p.Manufacturer)
-            .Include(static p => p.Store)
-            .Include(static p => p.ProductPrices)
             .SingleOrDefaultAsync(p => p.Id == productId);
     }
 

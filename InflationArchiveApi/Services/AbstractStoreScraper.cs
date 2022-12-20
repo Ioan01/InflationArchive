@@ -92,6 +92,8 @@ public abstract class AbstractStoreScraper : IJob
 
     private async Task FetchData()
     {
+        var dateTime = DateTime.UtcNow.Date.AddHours(DateTime.UtcNow.Hour);
+
         var httpRequestsByCategory = GenerateRequests();
 
         // for each category
@@ -114,7 +116,7 @@ public abstract class AbstractStoreScraper : IJob
             }
 
             // save or update every product
-            await _productService.SaveOrUpdateProducts(categoryProducts);
+            await _productService.SaveOrUpdateProducts(categoryProducts, dateTime);
         }
     }
 }

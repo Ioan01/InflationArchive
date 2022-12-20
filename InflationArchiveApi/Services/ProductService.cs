@@ -45,10 +45,8 @@ public class ProductService
         });
     }
 
-    public async Task SaveOrUpdateProducts(IEnumerable<Product> products)
+    public async Task SaveOrUpdateProducts(IEnumerable<Product> products, DateTime dateTime)
     {
-        var dateTime = DateTime.UtcNow.Date.AddHours(DateTime.UtcNow.Hour);
-
         foreach (var product in products)
         {
             var productRef = await scraperContext.Products
@@ -109,10 +107,12 @@ public class ProductService
         return ordered;
     }
 
-    public async Task<ProductQueryDto> GetProducts(Filter filter, Guid userId)
+    public async Task<ProductQueryDto> GetProducts(Filter filter, Guid? userId)
     {
         // Get user (with products not loaded!) if logged in
-        var user = await scraperContext.Users.SingleOrDefaultAsync(u => u.Id == userId);
+        var user = userId is null
+            ? null
+            : await scraperContext.Users.SingleAsync(u => u.Id == userId);
 
         // Get filtered and ordered products QUERY (not yet executed!)
         var filtered = FilterProducts(scraperContext.Products, filter);
@@ -155,11 +155,8 @@ public class ProductService
         return new ProductQueryDto(ProductsToDto(productList, user), filtered.Count());
     }
 
-    public async Task<ProductDto?> GetProduct(Guid productId, Guid userId)
+    public async Task<ProductDto?> GetProduct(Guid productId, Guid? userId)
     {
-        // Get user (with products not loaded!) if logged in
-        var user = await scraperContext.Users.SingleOrDefaultAsync(u => u.Id == userId);
-
         // Get product with related data loaded
         var product = await scraperContext.Products
             .Include(static p => p.Category)
@@ -169,6 +166,11 @@ public class ProductService
             .SingleOrDefaultAsync(p => p.Id == productId);
 
         if (product is null) return null;
+
+        // Get user (with products not loaded!) if logged in
+        var user = userId is null
+            ? null
+            : await scraperContext.Users.SingleAsync(u => u.Id == userId);
 
         // If user logged in
         if (user is not null)
