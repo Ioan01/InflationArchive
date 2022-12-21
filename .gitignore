@@ -21,3 +21,4 @@ InflationArchiveApi/appsettings.json
 InflationArchiveApi/obj/
 
 **/.vs
+.idea/.idea.InflationArchive/.idea/dataSources.xml

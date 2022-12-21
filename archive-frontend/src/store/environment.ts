@@ -1,7 +1,4 @@
-export const environment = "dev";
-
-export const localhostAddress = "http://localhost:30620";
-export const serverAddress = "";
-
-export const address = () =>
-  environment == "dev" ? localhostAddress : serverAddress;
+export const environment = "prod";
+export const localhostAddress = "http://localhost:5016";
+export const serverAddress = "http://104.248.130.157";
+export const address = () => serverAddress;
