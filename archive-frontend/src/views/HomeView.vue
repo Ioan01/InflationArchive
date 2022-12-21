@@ -68,6 +68,9 @@ export default defineComponent({
                 products.value = response.data.products
                 totalProducts.value = response.data.totalCount
 
+                console.log(products.value);
+
+
             } catch (error) {
                 console.error(error);
             }

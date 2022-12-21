@@ -1,6 +1,6 @@
 import LoginViewVue from "@/views/LoginView.vue";
 import RegisterViewVue from "@/views/RegisterView.vue";
-import ProductsViewVue from "@/views/ProductsView.vue";
+import ProductViewVue from "@/views/ProductView.vue";
 
 import Vue from "vue";
 import VueRouter from "vue-router";
@@ -24,6 +24,11 @@ const routes = [
     path: "/login",
     name: "login",
     component: LoginViewVue,
+  },
+  {
+    path: "/view/:productId",
+    props: { productId: "" },
+    component: ProductViewVue,
   },
 
   // {
