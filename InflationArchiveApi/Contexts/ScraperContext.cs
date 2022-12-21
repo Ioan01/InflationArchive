@@ -19,11 +19,15 @@ public class ScraperContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Unique index because (UserName, Email) is unique
+        // and a query verifying this pair is always used when creating a new user
         modelBuilder.Entity<User>()
-            .HasIndex(static e => new { e.UserName, e.Email })
+            .HasIndex(static e => new { e.Email, e.UserName })
             .IsUnique();
 
 
+        // Model the many-to-many relationship for Users <-> Products
+        // The ORM will create the third table and indexes automatically
         modelBuilder.Entity<Product>()
             .HasMany(static p => p.FavoritedByUsers)
             .WithMany(static u => u.FavoriteProducts)
@@ -34,34 +38,65 @@ public class ScraperContext : DbContext
             );
 
 
+        // Unique index because (Name, ManufacturerId, CategoryId, StoreId, Unit) is unique
+        // and a query verifying this tuple is always used when creating or updating product
         modelBuilder.Entity<Product>()
             .HasIndex(static e => new
             {
                 e.Name,
-                e.CategoryId,
                 e.ManufacturerId,
+                e.CategoryId,
                 e.StoreId,
-                e.Unit,
-                e.PricePerUnit
+                e.Unit
             })
             .IsUnique();
 
 
+        // Index to speed up GetProducts' filtering using WHERE clause
+        modelBuilder.Entity<Product>()
+            .HasIndex(static e => new
+            {
+                e.Name,
+                e.ManufacturerId,
+                e.CategoryId,
+                e.PricePerUnit
+            });
+
+
+        // Index to speed up ordering by Name technically
+        // already exists because Name is already the first
+        // element in the previous 2 indexes
+
+
+        // Index to speed up ordering by PricePerUnit
+        modelBuilder.Entity<Product>()
+            .HasIndex(static e => e.PricePerUnit);
+
+
+        // Unique index because Name is unique
+        // and we do a query on this column every
+        // time we want to retrieve a store's reference
         modelBuilder.Entity<Store>()
-            .HasIndex(static e => new { e.Name })
+            .HasIndex(static e => e.Name)
             .IsUnique();
 
 
+        // Unique index because Name is unique
+        // and we do a query on this column every
+        // time we want to retrieve a manufacturer's reference
         modelBuilder.Entity<Manufacturer>()
-            .HasIndex(static e => new { e.Name })
+            .HasIndex(static e => e.Name)
             .IsUnique();
 
 
+        // Unique index because Name is unique
+        // and we do a query on this column every
+        // time we want to retrieve a category's reference
         modelBuilder.Entity<Category>()
-            .HasIndex(static e => new { e.Name })
+            .HasIndex(static e => e.Name)
             .IsUnique();
 
-
+        // Unique index because (ProductId, Date) is unique
         modelBuilder.Entity<ProductPrice>()
             .HasIndex(static e => new { e.ProductId, e.Date })
             .IsUnique();
