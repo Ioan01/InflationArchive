@@ -55,10 +55,10 @@ public class ProductService
                 .Include(static p => p.Store)
                 .SingleOrDefaultAsync(p =>
                     product.Name == p.Name &&
+                    product.Unit == p.Unit &&
                     product.ManufacturerName == p.Manufacturer.Name &&
                     product.CategoryName == p.Category.Name &&
-                    product.StoreName == p.Store.Name &&
-                    product.Unit == p.Unit);
+                    product.StoreName == p.Store.Name);
 
             if (productRef != null)
             {
@@ -91,9 +91,9 @@ public class ProductService
             // Generate filter query based on user input
             .Where(p =>
                 EF.Functions.ILike(p.Name, $"%{filter.Name}%") &&
+                p.PricePerUnit >= filter.MinPrice && p.PricePerUnit <= filter.MaxPrice &&
                 EF.Functions.ILike(p.Manufacturer.Name, $"%{filter.Manufacturer}%") &&
-                EF.Functions.ILike(p.Category.Name, $"%{filter.Category}%") &&
-                p.PricePerUnit >= filter.MinPrice && p.PricePerUnit <= filter.MaxPrice);
+                EF.Functions.ILike(p.Category.Name, $"%{filter.Category}%"));
 
         var descending = filter.Order == FilterConstants.Descending;
         var propertyName = filter.OrderBy switch

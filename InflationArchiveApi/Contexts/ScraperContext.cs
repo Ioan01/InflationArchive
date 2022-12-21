@@ -38,16 +38,18 @@ public class ScraperContext : DbContext
             );
 
 
-        // Unique index because (Name, ManufacturerId, CategoryId, StoreId, Unit) is unique
-        // and a query verifying this tuple is always used when creating or updating product
+        // Unique index because (Name, Unit, ManufacturerId, CategoryId, StoreId) is unique
+        // NOTE: The query verifying this tuple actually only uses (Name and Unit) from product!
+        //       The ManufacturerName, CategoryName and StoreName are compared against the
+        //       joined tables.
         modelBuilder.Entity<Product>()
             .HasIndex(static e => new
             {
                 e.Name,
+                e.Unit,
                 e.ManufacturerId,
                 e.CategoryId,
-                e.StoreId,
-                e.Unit
+                e.StoreId
             })
             .IsUnique();
 
@@ -57,8 +59,6 @@ public class ScraperContext : DbContext
             .HasIndex(static e => new
             {
                 e.Name,
-                e.ManufacturerId,
-                e.CategoryId,
                 e.PricePerUnit
             });
 
