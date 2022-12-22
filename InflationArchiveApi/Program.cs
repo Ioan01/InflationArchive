@@ -77,7 +77,8 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policyBuilder =>
     {
-        policyBuilder.WithOrigins(new[] { "http://localhost:8080" });
+        policyBuilder.WithOrigins(new[] { "http://localhost:8080","https://ioan01.github.io/InflationArchive/" }).AllowAnyHeader().AllowAnyMethod()
+            .AllowCredentials();
     });
 
 });

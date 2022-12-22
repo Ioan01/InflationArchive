@@ -10,4 +10,5 @@ export interface ProductModel {
   category: string;
   manufacturer: string;
   store: string;
+  isFavoritedByCurrentUser: boolean;
 }

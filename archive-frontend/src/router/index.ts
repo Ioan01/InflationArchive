@@ -27,6 +27,7 @@ const routes = [
   },
   {
     path: "/view/:productId",
+    name: "productView",
     props: { productId: "" },
     component: ProductViewVue,
   },

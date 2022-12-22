@@ -35,12 +35,12 @@ export default defineComponent({
 
 
     setup() {
-        const { loggedIn } = storeToRefs(useGlobalStore())
+        const { token } = storeToRefs(useGlobalStore())
         let loginModel: any = { LoginName: '', Password: '', RememberMe: false }
 
         return {
             loginModel,
-            loggedIn
+            token
         }
     },
     data() {
@@ -56,7 +56,7 @@ export default defineComponent({
             this.showPassword = !this.showPassword;
         }
         ,
-        login() {
+        async login() {
             const form = new FormData();
             Object.keys(this.loginModel).forEach((key) => form.append(key, this.loginModel[key]));
 
@@ -68,9 +68,14 @@ export default defineComponent({
 
                 if (response.status == 200) {
 
-                    this.loggedIn = true
+                    response.text().then(tk => {
+                        this.token = tk
+                        this.$router.push("/")
+                    })
                 }
-                this.$router.push("/")
+
+
+
             }).catch(error => {
             })
 
