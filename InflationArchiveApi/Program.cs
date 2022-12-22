@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using InflationArchive.Contexts;
 using InflationArchive.Services;
@@ -10,6 +11,15 @@ using Quartz;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+var certPem = File.ReadAllText("/etc/letsencrypt/live/inflatie.live/fullchain.pem");
+var keyPem = File.ReadAllText("/etc/letsencrypt/live/inflatie.live/privkey.pem");
+var x509 = X509Certificate2.CreateFromPem(certPem, keyPem);
+
+builder.WebHost.ConfigureKestrel(options => options.ListenAnyIP(443, options =>
+{
+    options.UseHttps(x509);
+}));
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -77,7 +87,7 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policyBuilder =>
     {
-        policyBuilder.WithOrigins(new[] { "http://localhost:8080","https://ioan01.github.io/InflationArchive/" }).AllowAnyHeader().AllowAnyMethod()
+        policyBuilder.WithOrigins(new[] { "http://localhost:8080","https://ioan01.github.io" }).AllowAnyHeader().AllowAnyMethod()
             .AllowCredentials();
     });
 
@@ -113,6 +123,7 @@ builder.Services.AddQuartz(configurator =>
     });
 });
 
+
 builder.Services.AddQuartzServer(options =>
 {
     options.WaitForJobsToComplete = true;
@@ -142,10 +153,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseHttpsRedirection();
 
 app.UseCors();
 
 app.UseAuthentication();
+
 
 app.UseAuthorization();
 
