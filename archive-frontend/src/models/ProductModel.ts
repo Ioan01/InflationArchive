@@ -10,5 +10,5 @@ export interface ProductModel {
   category: string;
   manufacturer: string;
   store: string;
-  isFavorite: boolean;
+  isFavoritedByCurrentUser: boolean;
 }

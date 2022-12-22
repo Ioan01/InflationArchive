@@ -28,6 +28,7 @@
 <script lang="ts">import { address } from '@/store/environment';
 import { defineComponent } from 'vue';
 import { useGlobalStore } from '../store/global';
+import { LoginModel } from '../models/loginModel';
 import { storeToRefs } from 'pinia';
 
 export default defineComponent({
@@ -55,7 +56,7 @@ export default defineComponent({
             this.showPassword = !this.showPassword;
         }
         ,
-        login() {
+        async login() {
             const form = new FormData();
             Object.keys(this.loginModel).forEach((key) => form.append(key, this.loginModel[key]));
 
@@ -64,10 +65,17 @@ export default defineComponent({
                 method: "POST",
             }).then(response => {
                 console.log(response);
+
                 if (response.status == 200) {
-                    response.text().then(token => this.token = token);
+
+                    response.text().then(tk => {
+                        this.token = tk
+                        this.$router.push("/")
+                    })
                 }
-                this.$router.push("/")
+
+
+
             }).catch(error => {
             })
 
