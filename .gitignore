@@ -23,3 +23,4 @@ InflationArchiveApi/obj/
 
 **/.vs
 .idea/.idea.InflationArchive/.idea/dataSources.xml
+**/node_modules
