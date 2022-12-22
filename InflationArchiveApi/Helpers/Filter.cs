@@ -25,7 +25,7 @@ public class Filter
     public string Order
     {
         get => _order;
-        set => _order = value == FilterConstants.Descending
+        set => _order = string.Equals(value, FilterConstants.Descending, StringComparison.InvariantCultureIgnoreCase)
             ? FilterConstants.Descending
             : FilterConstants.Ascending;
     }
@@ -33,7 +33,7 @@ public class Filter
     public string OrderBy
     {
         get => _orderBy;
-        set => _orderBy = value == FilterConstants.OrderByPrice
+        set => _orderBy = string.Equals(value, FilterConstants.OrderByPrice, StringComparison.InvariantCultureIgnoreCase)
             ? FilterConstants.OrderByPrice
             : FilterConstants.OrderByName;
     }

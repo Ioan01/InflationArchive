@@ -28,19 +28,18 @@
 <script lang="ts">import { address } from '@/store/environment';
 import { defineComponent } from 'vue';
 import { useGlobalStore } from '../store/global';
-import { LoginModel } from '../models/loginModel';
 import { storeToRefs } from 'pinia';
 
 export default defineComponent({
 
 
     setup() {
-        const { loggedIn } = storeToRefs(useGlobalStore())
+        const { token } = storeToRefs(useGlobalStore())
         let loginModel: any = { LoginName: '', Password: '', RememberMe: false }
 
         return {
             loginModel,
-            loggedIn
+            token
         }
     },
     data() {
@@ -65,10 +64,8 @@ export default defineComponent({
                 method: "POST",
             }).then(response => {
                 console.log(response);
-
                 if (response.status == 200) {
-
-                    this.loggedIn = true
+                    response.text().then(token => this.token = token);
                 }
                 this.$router.push("/")
             }).catch(error => {

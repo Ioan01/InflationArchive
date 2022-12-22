@@ -4,15 +4,15 @@ import { address } from "./environment";
 
 export const useGlobalStore = defineStore("globals", {
   state: () => {
-    return { loggedIn: false, token: "" };
+    return { token: "" };
   },
 
   // could also be defined as
   // state: () => ({ count: 0 })
   actions: {
-    logIn() {
-      this.loggedIn = true;
-      console.log(this.loggedIn);
+    logIn(token: string) {
+      this.token = token;
+      console.log(this.token);
     },
   },
 });
