@@ -15,6 +15,7 @@
 **.dll
 **.gz
 **/Debug
+**/Release
 
 InflationArchiveApi/appsettings.json
 

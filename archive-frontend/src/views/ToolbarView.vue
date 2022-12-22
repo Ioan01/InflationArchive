@@ -4,18 +4,18 @@ import { useGlobalStore } from '../store/global';
         <v-toolbar color="" dense class="mb-5" elevation="4">
             <router-link to="/" class="router-link">
                 <v-btn icon>
-                    <v-icon color="primary" @click="log(loggedIn)">mdi-home</v-icon>
+                    <v-icon color="primary" @click="log(token)">mdi-home</v-icon>
                 </v-btn>
             </router-link>
             <v-spacer></v-spacer>
             <v-spacer></v-spacer>
-            <div v-if="loggedIn === false">
+            <div v-if="!token">
                 <router-link to="/login" class="ml-1 mr-1 router-link">
                     <v-btn color="primary">Login</v-btn>
                 </router-link>
             </div>
 
-            <div v-if="loggedIn === true">
+            <div v-if="token">
                 <v-btn color="primary">Logout</v-btn>
             </div>
 
@@ -32,10 +32,10 @@ import router from '../router/index';
 
 export default defineComponent({
     setup() {
-        const { loggedIn } = storeToRefs(useGlobalStore())
+        const { token } = storeToRefs(useGlobalStore())
 
         return {
-            loggedIn,
+            token,
             log(a: any) {
                 console.log(a)
             }

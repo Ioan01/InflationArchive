@@ -16,9 +16,9 @@
                 </v-row>
             </v-card>
             <v-container fluid>
-                <v-sheet class="v-sheet--offset mx-auto" elevation="12">
-                    <v-sparkline stroke-linecap="round" label-size="5" type="trend" line-width="1" radius="2" smooth
-                        :value="values" :labels="labels" auto-draw></v-sparkline>
+                <v-sheet class="v-sheet mx-auto" elevation="12">
+                    <v-sparkline stroke-linecap="round" label-size="7" line-width="1" smooth :value="values"
+                        :labels="labels" auto-draw></v-sparkline>
                 </v-sheet>
             </v-container>
         </div>
@@ -70,7 +70,7 @@ export default defineComponent({
             return this.item?.productPrices.map(price => price.price)
         },
         labels(): string[] | undefined {
-            return this.item?.productPrices.map(price => price.date.substring(0, 10) + '\n' + price.price.toString())
+            return this.item?.productPrices.map(price => price.date.substring(0, 10))
         }
     }
 
