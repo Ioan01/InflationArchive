@@ -16,5 +16,26 @@ A very basic frontend showcasing the basic features is available [here](https://
 - .NET Core and Entity Framework Core with PostgreSQL for the backend
 - Vue 2 and Vuetify for the frontend
 
+## Appsettings json
+##
+```
+{
+    "Logging": {
+        "LogLevel": {
+            "Default": "Information",
+            "Microsoft.AspNetCore": "Warning"
+        }
+    },
+    "AllowedHosts": "*",
+    "ConnectionStrings": {
+        "userContext": "Host=host;Database=<db>;Username=<user>;Password=<password>",
+        "scraperContext": "Host=host;Database=<db>;Username=<user>;Password=<password>"
+    },
+    "JWT": {
+        "Issuer": <issuer>,
+        "Audience": <audience>,
+        "IssuerSigningKey": <key>
+    },
 
-
+}
+```
